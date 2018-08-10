@@ -6,12 +6,13 @@ namespace LD42 {
     /// <summary>
     /// This is the main type for your game.
     /// </summary>
-    public class Game1 : Game {
-        GraphicsDeviceManager graphics;
-        SpriteBatch spriteBatch;
+    public sealed class LD42Game : Game {
+        private readonly GraphicsDeviceManager _graphics;
 
-        public Game1() {
-            graphics = new GraphicsDeviceManager(this);
+        private SpriteBatch _spriteBatch;
+
+        public LD42Game() {
+            _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
         }
 
@@ -33,7 +34,7 @@ namespace LD42 {
         /// </summary>
         protected override void LoadContent() {
             // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+            _spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
         }
