@@ -25,7 +25,7 @@ namespace LD42.Screens {
 
         private Texture2D _groundTexture, _gateTexture, _boxTexture, _coalTexture,
             _handOpenTexture, _handGrabTexture, _pixelTexture, _blueSeedTexture,
-            _blueSaplingTexture;
+            _blueSaplingTexture, _bluePlantTexture;
 
         private Entity _hand, _object;
 
@@ -102,6 +102,7 @@ namespace LD42.Screens {
             _pixelTexture = content.Load<Texture2D>("Textures/pixel");
             _blueSeedTexture = content.Load<Texture2D>("Textures/blue_seed");
             _blueSaplingTexture = content.Load<Texture2D>("Textures/blue_sapling");
+            _bluePlantTexture = content.Load<Texture2D>("Textures/blue_plant");
         }
 
         private void CreateHand(Vector2 position) {
@@ -125,6 +126,9 @@ namespace LD42.Screens {
                 }
                 case Item.BlueSapling: {
                     return CreateBlueSapling(position);
+                }
+                case Item.BluePlant: {
+                    return CreateBluePlant(position);
                 }
                 default: {
                     return null;
@@ -157,7 +161,20 @@ namespace LD42.Screens {
 
             sapling.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 32, 32);
             sapling.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
+
+            sapling.GetComponent<ObjectComponent>().TransformType = Item.BluePlant;
+            sapling.GetComponent<ObjectComponent>().TransformTimer = 13f;
             return sapling;
+        }
+
+        private Entity CreateBluePlant(Vector2 position) {
+            Entity plant = CreateItem(position, Item.BluePlant, 15f, _bluePlantTexture);
+            plant.AddComponent(new AnimationComponent());
+            plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
+
+            plant.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
+            plant.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
+            return plant;
         }
 
         private void GrabItem(Entity hand, Entity item) {
@@ -361,6 +378,14 @@ namespace LD42.Screens {
                 }
                 else {
                     ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
+
+                    if (objectComponent.TransformType != Item.None) {
+                        objectComponent.TransformTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                        if (objectComponent.TransformTimer <= 0f) {
+                            entity.Delete();
+                            Create(objectComponent.TransformType, positionComponent.Position);
+                        }
+                    }
 
                     if (objectComponent.Type == Item.BlueSeed) {
                         if (!objectComponent.IsHeld && positionComponent.Depth == 0f) {

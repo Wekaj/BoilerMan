@@ -11,6 +11,10 @@ namespace LD42.Ecs.Components {
         public Item Type { get; set; }
         public float Radius { get; set; }
         public bool IsHeld { get; set; } = false;
+
+        public Item TransformType { get; set; } = Item.None;
+        public float TransformTimer { get; set; } = 0f;
+
         public Item SpawnerType { get; set; } = Item.None;
     }
 }

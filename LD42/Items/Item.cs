@@ -3,6 +3,7 @@
         None,
         Coal,
         BlueSeed,
-        BlueSapling
+        BlueSapling,
+        BluePlant
     }
 }
