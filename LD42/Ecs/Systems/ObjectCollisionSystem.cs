@@ -2,6 +2,7 @@
 using Artemis.System;
 using LD42.Ecs.Components;
 using Microsoft.Xna.Framework;
+using System;
 using System.Collections.Generic;
 
 namespace LD42.Ecs.Systems {
@@ -39,14 +40,16 @@ namespace LD42.Ecs.Systems {
                 forceComponent2 = entity2.GetComponent<ForceComponent>();
 
             Vector2 difference = positionComponent1.Position - positionComponent2.Position;
+            float touchingDistance = objectComponent1.Radius + objectComponent2.Radius;
 
-            float distance = difference.Length();
-            if (distance == 0f || distance > objectComponent1.Radius + objectComponent2.Radius) {
+            float distance = difference.LengthSquared();
+            if (distance == 0f || distance > touchingDistance * touchingDistance) {
                 return;
             }
 
+            distance = (float)Math.Sqrt(distance);
             float strength = 1000f / distance;
-            Vector2 force = Vector2.Normalize(difference) * strength;
+            Vector2 force = (difference / distance) * strength;
 
             forceComponent1.Force += force;
             forceComponent2.Force -= force;

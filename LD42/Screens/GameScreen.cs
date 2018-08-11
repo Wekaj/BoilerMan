@@ -31,7 +31,7 @@ namespace LD42.Screens {
 
         private Entity _hand, _object;
 
-        private float _coalTimer = 0f, _coalPeriod = 0.5f;
+        private float _coalTimer = 0f, _coalPeriod = 0.1f;
 
         private float _flamePower = 20f, _flameShift = 0f;
 
