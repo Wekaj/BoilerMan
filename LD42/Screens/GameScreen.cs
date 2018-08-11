@@ -22,12 +22,17 @@ namespace LD42.Screens {
 
         private readonly SpriteBatch _spriteBatch;
 
-        private Texture2D _groundTexture, _boxTexture, _coalTexture,
-            _handOpenTexture, _handGrabTexture;
+        private Texture2D _groundTexture, _gateTexture, _boxTexture, _coalTexture,
+            _handOpenTexture, _handGrabTexture, _pixelTexture;
 
         private Entity _hand, _object;
 
         private float _coalTimer = 0f, _coalPeriod = 1f;
+
+        private float _flamePower = 20f, _flameShift = 0f;
+
+        private const float _furnaceAnimationDuration = 0.075f;
+        private float _furnaceAnimation = 0f;
 
         public GameScreen(LD42Game game) {
             _game = game;
@@ -57,13 +62,14 @@ namespace LD42.Screens {
 
             Entity tool = _entityWorld.CreateEntity();
             tool.AddComponent(new PositionComponent(new Vector2(16f, 64f)));
-            tool.AddComponent(new ToolComponent(16f, t => {
+            tool.AddComponent(new ToolComponent(_furnace, 16f, t => {
                 float p = (t % 1f) / 1f;
                 return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 8f, (float)Math.Sin(p * MathHelper.TwoPi) * 32f);
             }));
         }
 
         private void CreateSystems() {
+            _entityWorld.SystemManager.SetSystem(new ToolUpdatingSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new HoldingSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ObjectCollisionSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ObjectBoundariesSystem(_ground, _box), GameLoopType.Update);
@@ -79,10 +85,12 @@ namespace LD42.Screens {
 
         private void LoadContent(ContentManager content) {
             _groundTexture = content.Load<Texture2D>("Textures/ground");
+            _gateTexture = content.Load<Texture2D>("Textures/gate");
             _boxTexture = content.Load<Texture2D>("Textures/box");
             _coalTexture = content.Load<Texture2D>("Textures/coal");
             _handOpenTexture = content.Load<Texture2D>("Textures/hand_open");
             _handGrabTexture = content.Load<Texture2D>("Textures/hand_grab");
+            _pixelTexture = content.Load<Texture2D>("Textures/pixel");
         }
 
         private void CreateHand(Vector2 position) {
@@ -164,7 +172,12 @@ namespace LD42.Screens {
                     float closestDistance = float.MaxValue;
                     Entity closestObject = null;
                     foreach (Entity obj in _entityWorld.EntityManager.GetEntities(Aspect.One(typeof(ObjectComponent), typeof(ToolComponent)))) {
-                        float distance = (obj.GetComponent<PositionComponent>().Position - mousePosition).LengthSquared();
+                        PositionComponent positionComponent = obj.GetComponent<PositionComponent>();
+                        if (positionComponent.Depth < 0f) {
+                            continue;
+                        }
+
+                        float distance = (positionComponent.Position - mousePosition).LengthSquared();
                         if (distance < closestDistance) {
                             closestDistance = distance;
                             closestObject = obj;
@@ -274,18 +287,51 @@ namespace LD42.Screens {
 
                 CreateCoal(new Vector2(_ground.Left + (float)_random.NextDouble() * _ground.Width, _ground.Bottom + 8f + (float)_random.NextDouble() * 16f));
             }
+
+            foreach (Entity entity in _entityWorld.EntityManager.GetEntities(Aspect.All(typeof(ObjectComponent)))) {
+                PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
+
+                if (positionComponent.Depth < -50f) {
+                    entity.Delete();
+                    _flameShift += 0.15f;
+                }
+            }
+
+            _flameShift -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.1f;
+            _flamePower += _flameShift * (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            if (_furnace.IsOpen) {
+                _furnaceAnimation += (float)gameTime.ElapsedGameTime.TotalSeconds;
+                _furnaceAnimation = Math.Min(_furnaceAnimation, _furnaceAnimationDuration);
+            }
+            else {
+                _furnaceAnimation -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                _furnaceAnimation = Math.Max(_furnaceAnimation, 0f);
+            }
         }
 
         public void Draw(GameTime gameTime) {
             _spriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, samplerState: SamplerState.PointClamp);
 
             Vector2 center = _game.GraphicsDevice.Viewport.Bounds.Center.ToVector2();
+            
+            if (_furnace.IsOpen) {
+                int i = 0;
+            }
+
+            Rectangle sourceRectangle = new Rectangle(0, 0, _gateTexture.Width / 4, _gateTexture.Height);
+            sourceRectangle.Offset(_gateTexture.Width / 4f * (int)(3.99f * _furnaceAnimation / _furnaceAnimationDuration), 0f);
+
+            _spriteBatch.Draw(_gateTexture, _ground.Location.ToVector2(), null, sourceRectangle, layerDepth: Layers.Ground);
+            _spriteBatch.Draw(_gateTexture, _ground.Location.ToVector2() + new Vector2(_ground.Width - _gateTexture.Width / 4f, 0f), null, sourceRectangle, layerDepth: Layers.Ground);
 
             _spriteBatch.Draw(_groundTexture, center + new Vector2(0f, 36f), origin: _groundTexture.Bounds.Center.ToVector2(), layerDepth: Layers.Ground);
 
             _entityWorld.Draw();
 
             _spriteBatch.Draw(_boxTexture, new Vector2(center.X, 154f), origin: _boxTexture.Bounds.Center.ToVector2(), layerDepth: Layers.AboveGround);
+
+            _spriteBatch.Draw(_pixelTexture, new Vector2(128f, 16f), color: Color.OrangeRed, scale: new Vector2(128f * _flamePower / 100f, 16f));
 
             _spriteBatch.End();
         }

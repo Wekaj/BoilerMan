@@ -6,5 +6,6 @@
         public static float AboveGround = 0.2f;
         public static float Air = 0.3f;
         public static float Hands = 0.4f;
+        public static float UI = 0.6f;
     }
 }

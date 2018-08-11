@@ -58,6 +58,7 @@
     <Compile Include="Ecs\Systems\ObjectGravitySystem.cs" />
     <Compile Include="Ecs\Systems\ObjectSortingSystem.cs" />
     <Compile Include="Ecs\Systems\SpriteDrawingSystem.cs" />
+    <Compile Include="Ecs\Systems\ToolUpdatingSystem.cs" />
     <Compile Include="Ecs\Systems\VelocitySystem.cs" />
     <Compile Include="Graphics\Layers.cs" />
     <Compile Include="LD42Game.cs" />
@@ -66,6 +67,7 @@
     <Compile Include="Screens\GameScreen.cs" />
     <Compile Include="Screens\IScreen.cs" />
     <Compile Include="Tools\Furnace.cs" />
+    <Compile Include="Tools\ITool.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="artemis, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
