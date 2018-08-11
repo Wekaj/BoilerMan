@@ -22,5 +22,6 @@ namespace LD42.Ecs.Components {
 
         public Vector2 Velocity { get; set; }
         public float Friction { get; set; } = 0f;
+        public float MaxSpeed { get; set; } = float.MaxValue;
     }
 }

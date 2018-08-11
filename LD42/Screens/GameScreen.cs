@@ -161,7 +161,7 @@ namespace LD42.Screens {
         private Entity CreateItem(Vector2 position, Item type, float radius, Texture2D texture, float rotation = 0f) {
             Entity item = _entityWorld.CreateEntity();
             item.AddComponent(new PositionComponent(position));
-            item.AddComponent(new VelocityComponent(1000f));
+            item.AddComponent(new VelocityComponent(1000f) { MaxSpeed = 300f });
             item.AddComponent(new ForceComponent(1f));
             item.AddComponent(new ObjectComponent(type, radius));
             item.AddComponent(new SpriteComponent(texture, texture.Bounds.Center.ToVector2()) { Rotation = rotation });

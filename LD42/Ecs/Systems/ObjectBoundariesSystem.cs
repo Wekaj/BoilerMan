@@ -30,7 +30,7 @@ namespace LD42.Ecs.Systems {
             worldForce.Y -= Math.Max(positionComponent.Position.Y - _world.Bottom, 0f);
             worldForce.Y += Math.Max(_world.Top - positionComponent.Position.Y, 0f);
             if (worldForce.X != 0f || worldForce.Y != 0f) {
-                forceComponent.Force += Vector2.Normalize(worldForce) * 50f;
+                forceComponent.Force += Vector2.Normalize(worldForce) * 100f;
             }
 
             Vector2 wallForce = Vector2.Zero;
@@ -40,7 +40,7 @@ namespace LD42.Ecs.Systems {
                 }
             }
             if (wallForce.X != 0f || wallForce.Y != 0f) {
-                forceComponent.Force += Vector2.Normalize(wallForce) * 30f;
+                forceComponent.Force += Vector2.Normalize(wallForce) * 80f;
             }
         }
     }

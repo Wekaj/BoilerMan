@@ -29,9 +29,12 @@ namespace LD42.Ecs.Systems {
             Vector2 elbow = handComponent.Shoulder + difference / 2f;
             float elbowHeight = (positionComponent.Depth + shoulderHeight) / 2f + 10000f / distance;
 
+            Vector2 hand = positionComponent.Position + Vector2.Normalize(handComponent.Shoulder - positionComponent.Position) * 18f;
+            hand -= new Vector2(0f, 6f);
+
             Vector2 p1 = handComponent.Shoulder - new Vector2(0f, shoulderHeight);
             Vector2 p2 = elbow - new Vector2(0f, elbowHeight);
-            Vector2 p3 = positionComponent.Position - new Vector2(0f, positionComponent.Depth);
+            Vector2 p3 = hand - new Vector2(0f, positionComponent.Depth);
 
             DrawSegment(p1, p2);
             DrawSegment(p2, p3);

@@ -15,11 +15,17 @@ namespace LD42.Ecs.Systems {
 
             float speed = velocityComponent.Velocity.Length();
             if (speed > 0f) {
-                float ratio = (speed - velocityComponent.Friction * (float)DeltaTime.TotalSeconds) / speed;
+                float newSpeed = speed - velocityComponent.Friction * (float)DeltaTime.TotalSeconds;
+                float ratio = newSpeed / speed;
                 if (ratio < 0f) {
                     ratio = 0f;
                 }
-                velocityComponent.Velocity = velocityComponent.Velocity * ratio;
+                velocityComponent.Velocity *= ratio;
+                speed = newSpeed;
+            }
+
+            if (speed > velocityComponent.MaxSpeed) {
+                velocityComponent.Velocity *= velocityComponent.MaxSpeed / speed;
             }
         }
     }
