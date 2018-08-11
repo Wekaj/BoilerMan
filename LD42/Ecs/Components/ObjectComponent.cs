@@ -7,5 +7,6 @@ namespace LD42.Ecs.Components {
         }
 
         public float Radius { get; set; }
+        public bool IsHeld { get; set; } = false;
     }
 }

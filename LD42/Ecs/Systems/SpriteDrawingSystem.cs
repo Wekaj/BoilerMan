@@ -17,7 +17,14 @@ namespace LD42.Ecs.Systems {
             SpriteComponent spriteComponent = entity.GetComponent<SpriteComponent>();
             PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
 
-            _spriteBatch.Draw(spriteComponent.Texture, positionComponent.Position - new Vector2(0f, positionComponent.Depth), origin: spriteComponent.Origin);
+            Vector2 position = positionComponent.Position - new Vector2(0f, positionComponent.Depth);
+
+            _spriteBatch.Draw(spriteComponent.Texture, 
+                position, 
+                origin: spriteComponent.Origin,
+                rotation: spriteComponent.Rotation,
+                effects: spriteComponent.Effects,
+                layerDepth: spriteComponent.LayerDepth);
         }
     }
 }

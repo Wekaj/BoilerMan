@@ -27,6 +27,11 @@ namespace LD42.Ecs.Systems {
         private void CheckCollision(Entity entity1, Entity entity2) {
             ObjectComponent objectComponent1 = entity1.GetComponent<ObjectComponent>(),
                 objectComponent2 = entity2.GetComponent<ObjectComponent>();
+
+            if (objectComponent1.IsHeld || objectComponent2.IsHeld) {
+                return;
+            }
+
             PositionComponent positionComponent1 = entity1.GetComponent<PositionComponent>(),
                 positionComponent2 = entity2.GetComponent<PositionComponent>();
             ForceComponent forceComponent1 = entity1.GetComponent<ForceComponent>(),

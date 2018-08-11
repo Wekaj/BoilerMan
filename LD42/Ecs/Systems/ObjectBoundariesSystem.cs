@@ -16,6 +16,11 @@ namespace LD42.Ecs.Systems {
 
         public override void Process(Entity entity) {
             ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
+
+            if (objectComponent.IsHeld) {
+                return;
+            }
+
             PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
             ForceComponent forceComponent = entity.GetComponent<ForceComponent>();
 

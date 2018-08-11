@@ -42,21 +42,30 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Ecs\Components\ForceComponent.cs" />
+    <Compile Include="Ecs\Components\HandComponent.cs" />
     <Compile Include="Ecs\Components\ObjectComponent.cs" />
     <Compile Include="Ecs\Components\PositionComponent.cs" />
     <Compile Include="Ecs\Components\SpriteComponent.cs" />
+    <Compile Include="Ecs\Components\ToolComponent.cs" />
     <Compile Include="Ecs\Components\VelocityComponent.cs" />
     <Compile Include="Ecs\Systems\EntityUpdatingSystem.cs" />
     <Compile Include="Ecs\Systems\ForceSystem.cs" />
+    <Compile Include="Ecs\Systems\HandRotationSystem.cs" />
+    <Compile Include="Ecs\Systems\HandTargetSystem.cs" />
+    <Compile Include="Ecs\Systems\HoldingSystem.cs" />
     <Compile Include="Ecs\Systems\ObjectCollisionSystem.cs" />
     <Compile Include="Ecs\Systems\ObjectBoundariesSystem.cs" />
+    <Compile Include="Ecs\Systems\ObjectGravitySystem.cs" />
+    <Compile Include="Ecs\Systems\ObjectSortingSystem.cs" />
     <Compile Include="Ecs\Systems\SpriteDrawingSystem.cs" />
     <Compile Include="Ecs\Systems\VelocitySystem.cs" />
+    <Compile Include="Graphics\Layers.cs" />
     <Compile Include="LD42Game.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Screens\GameScreen.cs" />
     <Compile Include="Screens\IScreen.cs" />
+    <Compile Include="Tools\Furnace.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="artemis, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
