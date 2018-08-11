@@ -3,6 +3,7 @@ using Artemis.Manager;
 using LD42.Ecs.Components;
 using LD42.Ecs.Systems;
 using LD42.Graphics;
+using LD42.Items;
 using LD42.Tools;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -23,7 +24,8 @@ namespace LD42.Screens {
         private readonly SpriteBatch _spriteBatch;
 
         private Texture2D _groundTexture, _gateTexture, _boxTexture, _coalTexture,
-            _handOpenTexture, _handGrabTexture, _pixelTexture;
+            _handOpenTexture, _handGrabTexture, _pixelTexture, _blueSeedTexture,
+            _blueSaplingTexture;
 
         private Entity _hand, _object;
 
@@ -66,6 +68,12 @@ namespace LD42.Screens {
                 float p = (t % 1f) / 1f;
                 return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 8f, (float)Math.Sin(p * MathHelper.TwoPi) * 32f);
             }));
+
+            Entity seedBox = _entityWorld.CreateEntity();
+            seedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 16f)));
+            seedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
+                SpawnerType = Item.BlueSeed
+            });
         }
 
         private void CreateSystems() {
@@ -77,6 +85,7 @@ namespace LD42.Screens {
             _entityWorld.SystemManager.SetSystem(new ForceSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new VelocitySystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new HandTargetSystem(), GameLoopType.Update);
+            _entityWorld.SystemManager.SetSystem(new AnimationSystem(), GameLoopType.Update);
 
             _entityWorld.SystemManager.SetSystem(new HandRotationSystem(_box.Center.ToVector2()), GameLoopType.Draw);
             _entityWorld.SystemManager.SetSystem(new ObjectSortingSystem(), GameLoopType.Draw);
@@ -91,6 +100,8 @@ namespace LD42.Screens {
             _handOpenTexture = content.Load<Texture2D>("Textures/hand_open");
             _handGrabTexture = content.Load<Texture2D>("Textures/hand_grab");
             _pixelTexture = content.Load<Texture2D>("Textures/pixel");
+            _blueSeedTexture = content.Load<Texture2D>("Textures/blue_seed");
+            _blueSaplingTexture = content.Load<Texture2D>("Textures/blue_sapling");
         }
 
         private void CreateHand(Vector2 position) {
@@ -98,21 +109,78 @@ namespace LD42.Screens {
             hand.AddComponent(new PositionComponent(position) { Depth = 50f });
             hand.AddComponent(new VelocityComponent(1000f));
             hand.AddComponent(new ForceComponent(2f));
-            hand.AddComponent(new HandComponent(position));
+            hand.AddComponent(new HandComponent(position, 50f));
             hand.AddComponent(new SpriteComponent(_handOpenTexture, _handOpenTexture.Bounds.Center.ToVector2()) {
                 LayerDepth = Layers.Hands
             });
         }
 
-        private void CreateCoal(Vector2 position) {
-            Entity coal = _entityWorld.CreateEntity();
-            coal.AddComponent(new PositionComponent(position));
-            coal.AddComponent(new VelocityComponent(1000f));
-            coal.AddComponent(new ForceComponent(1f));
-            coal.AddComponent(new ObjectComponent(15f));
-            coal.AddComponent(new SpriteComponent(_coalTexture, _coalTexture.Bounds.Center.ToVector2()) {
-                Rotation = (float)_random.NextDouble() * MathHelper.TwoPi
-            });
+        private Entity Create(Item item, Vector2 position) {
+            switch (item) {
+                case Item.Coal: {
+                    return CreateCoal(position);
+                }
+                case Item.BlueSeed: {
+                    return CreateBlueSeed(position);
+                }
+                case Item.BlueSapling: {
+                    return CreateBlueSapling(position);
+                }
+                default: {
+                    return null;
+                }
+            }
+        }
+
+        private Entity CreateItem(Vector2 position, Item type, float radius, Texture2D texture, float rotation = 0f) {
+            Entity item = _entityWorld.CreateEntity();
+            item.AddComponent(new PositionComponent(position));
+            item.AddComponent(new VelocityComponent(1000f));
+            item.AddComponent(new ForceComponent(1f));
+            item.AddComponent(new ObjectComponent(type, radius));
+            item.AddComponent(new SpriteComponent(texture, texture.Bounds.Center.ToVector2()) { Rotation = rotation });
+            return item;
+        }
+
+        private Entity CreateCoal(Vector2 position) {
+            return CreateItem(position, Item.Coal, 15f, _coalTexture, (float)_random.NextDouble() * MathHelper.TwoPi);
+        }
+
+        private Entity CreateBlueSeed(Vector2 position) {
+            return CreateItem(position, Item.BlueSeed, 4f, _blueSeedTexture);
+        }
+
+        private Entity CreateBlueSapling(Vector2 position) {
+            Entity sapling = CreateItem(position, Item.BlueSapling, 8f, _blueSaplingTexture);
+            sapling.AddComponent(new AnimationComponent());
+            sapling.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0).AddFrame(3, 0), 0.25f);
+
+            sapling.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 32, 32);
+            sapling.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
+            return sapling;
+        }
+
+        private void GrabItem(Entity hand, Entity item) {
+            ObjectComponent objectComponent = item.GetComponent<ObjectComponent>();
+            PositionComponent positionComponent = item.GetComponent<PositionComponent>();
+
+            if (objectComponent.SpawnerType != Item.None) {
+                Entity newItem = Create(objectComponent.SpawnerType, positionComponent.Position);
+
+                GrabItem(hand, newItem);
+            }
+            else {
+                _hand = hand;
+                _object = item;
+
+                objectComponent.IsHeld = true;
+
+                HandComponent handComponent = hand.GetComponent<HandComponent>();
+                handComponent.HeldItem = _object;
+
+                SpriteComponent spriteComponent = hand.GetComponent<SpriteComponent>();
+                spriteComponent.Texture = _handGrabTexture;
+            }
         }
 
         private void DropItem(Entity hand) {
@@ -134,17 +202,18 @@ namespace LD42.Screens {
         }
 
         private void GrabTool(Entity hand, Entity tool) {
+            ToolComponent toolComponent = tool.GetComponent<ToolComponent>();
             PositionComponent toolPositionComponent = tool.GetComponent<PositionComponent>();
-
+            
+            toolComponent.HoldingHand = hand;
+                
             HandComponent handComponent = hand.GetComponent<HandComponent>();
             handComponent.TargetPosition = toolPositionComponent.Position;
+            handComponent.TargetDepth = toolPositionComponent.Depth;
             handComponent.HeldTool = tool;
-            
+
             SpriteComponent spriteComponent = hand.GetComponent<SpriteComponent>();
             spriteComponent.Texture = _handGrabTexture;
-
-            ToolComponent toolComponent = tool.GetComponent<ToolComponent>();
-            toolComponent.HoldingHand = hand;
         }
 
         private void ReleaseTool(Entity tool) {
@@ -189,7 +258,7 @@ namespace LD42.Screens {
 
                     if (_object.HasComponent<ObjectComponent>()) {
                         ObjectComponent objectComponent = _object.GetComponent<ObjectComponent>();
-                        if (closestObject != null && closestDistance < objectComponent.Radius + 4f) {
+                        if (closestObject != null && closestDistance < objectComponent.Radius + 10f) {
                             PositionComponent positionComponent = _object.GetComponent<PositionComponent>();
 
                             closestDistance = float.MaxValue;
@@ -213,7 +282,7 @@ namespace LD42.Screens {
                         // Attach hand to tool. 
                         ToolComponent toolComponent = _object.GetComponent<ToolComponent>();
 
-                        if (closestObject != null && closestDistance < toolComponent.Radius + 4f) {
+                        if (closestObject != null && closestDistance < toolComponent.Radius + 10f) {
                             if (toolComponent.HoldingHand != null) {
                                 ReleaseTool(_object);
                             }
@@ -250,26 +319,21 @@ namespace LD42.Screens {
                         PositionComponent handPositionComponent = _hand.GetComponent<PositionComponent>();
 
                         if (handComponent.HeldItem == null && _object != null) {
-                            handComponent.TargetPosition = _object.GetComponent<PositionComponent>().Position;
+                            PositionComponent positionComponent = _object.GetComponent<PositionComponent>();
+                            if (positionComponent != null) {
+                                handComponent.TargetPosition = positionComponent.Position;
+                                handComponent.TargetDepth = 1f;
 
-                            if (handPositionComponent.Depth > 1f) {
-                                handPositionComponent.Depth -= 200f * (float)gameTime.ElapsedGameTime.TotalSeconds;
-                                handPositionComponent.Depth = Math.Max(handPositionComponent.Depth, 1f);
-                            }
-                            else if ((handPositionComponent.Position - handComponent.TargetPosition).Length() < 5f) {
-                                handComponent.HeldItem = _object;
-                                _hand.GetComponent<SpriteComponent>().Texture = _handGrabTexture;
-                                _object.GetComponent<ObjectComponent>().IsHeld = true;
+                                if (handPositionComponent.Depth <= handComponent.TargetDepth
+                                    && (handPositionComponent.Position - handComponent.TargetPosition).Length() < 10f) {
+                                    GrabItem(_hand, _object);
+                                }
                             }
                         }
 
                         if (handComponent.HeldItem != null) {
                             handComponent.TargetPosition = mousePosition;
-
-                            if (handPositionComponent.Depth < 50f) {
-                                handPositionComponent.Depth += 300f * (float)gameTime.ElapsedGameTime.TotalSeconds;
-                                handPositionComponent.Depth = Math.Min(handPositionComponent.Depth, 50f);
-                            }
+                            handComponent.TargetDepth = 50f;
                         }
                     }
                 }
@@ -294,6 +358,16 @@ namespace LD42.Screens {
                 if (positionComponent.Depth < -50f) {
                     entity.Delete();
                     _flameShift += 0.15f;
+                }
+                else {
+                    ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
+
+                    if (objectComponent.Type == Item.BlueSeed) {
+                        if (!objectComponent.IsHeld && positionComponent.Depth == 0f) {
+                            entity.Delete();
+                            CreateBlueSapling(positionComponent.Position);
+                        }
+                    }
                 }
             }
 

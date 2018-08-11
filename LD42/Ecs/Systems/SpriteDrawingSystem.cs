@@ -21,6 +21,7 @@ namespace LD42.Ecs.Systems {
 
             _spriteBatch.Draw(spriteComponent.Texture, 
                 position, 
+                sourceRectangle: spriteComponent.SourceRectangle,
                 origin: spriteComponent.Origin,
                 rotation: spriteComponent.Rotation,
                 effects: spriteComponent.Effects,

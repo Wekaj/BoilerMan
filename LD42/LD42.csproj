@@ -41,6 +41,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Ecs\Components\AnimationComponent.cs" />
     <Compile Include="Ecs\Components\ForceComponent.cs" />
     <Compile Include="Ecs\Components\HandComponent.cs" />
     <Compile Include="Ecs\Components\ObjectComponent.cs" />
@@ -48,6 +49,7 @@
     <Compile Include="Ecs\Components\SpriteComponent.cs" />
     <Compile Include="Ecs\Components\ToolComponent.cs" />
     <Compile Include="Ecs\Components\VelocityComponent.cs" />
+    <Compile Include="Ecs\Systems\AnimationSystem.cs" />
     <Compile Include="Ecs\Systems\EntityUpdatingSystem.cs" />
     <Compile Include="Ecs\Systems\ForceSystem.cs" />
     <Compile Include="Ecs\Systems\HandRotationSystem.cs" />
@@ -60,7 +62,9 @@
     <Compile Include="Ecs\Systems\SpriteDrawingSystem.cs" />
     <Compile Include="Ecs\Systems\ToolUpdatingSystem.cs" />
     <Compile Include="Ecs\Systems\VelocitySystem.cs" />
+    <Compile Include="Graphics\Animation.cs" />
     <Compile Include="Graphics\Layers.cs" />
+    <Compile Include="Items\Item.cs" />
     <Compile Include="LD42Game.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

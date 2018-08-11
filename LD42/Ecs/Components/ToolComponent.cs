@@ -1,5 +1,6 @@
 ﻿using Artemis;
 using Artemis.Interface;
+using LD42.Items;
 using LD42.Tools;
 using Microsoft.Xna.Framework;
 using System;

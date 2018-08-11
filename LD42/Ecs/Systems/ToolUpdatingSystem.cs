@@ -11,7 +11,7 @@ namespace LD42.Ecs.Systems {
             ToolComponent toolComponent = entity.GetComponent<ToolComponent>();
 
             if (toolComponent.HoldingHand != null) {
-                toolComponent.Tool.Update(DeltaTime);
+                toolComponent.Tool?.Update(DeltaTime);
             }
         }
     }
