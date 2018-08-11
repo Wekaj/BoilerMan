@@ -4,6 +4,7 @@
         Coal,
         BlueSeed,
         BlueSapling,
-        BluePlant
+        BluePlant,
+        Minion
     }
 }

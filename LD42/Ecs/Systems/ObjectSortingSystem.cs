@@ -2,6 +2,7 @@
 using Artemis.System;
 using LD42.Ecs.Components;
 using LD42.Graphics;
+using LD42.Items;
 
 namespace LD42.Ecs.Systems {
     public sealed class ObjectSortingSystem : EntityProcessingSystem {
@@ -10,6 +11,7 @@ namespace LD42.Ecs.Systems {
         }
 
         public override void Process(Entity entity) {
+            ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
             SpriteComponent spriteComponent = entity.GetComponent<SpriteComponent>();
             PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
 
@@ -17,7 +19,7 @@ namespace LD42.Ecs.Systems {
                 spriteComponent.LayerDepth = Layers.BelowGround;
             }
             else if (positionComponent.Depth < 16f) {
-                spriteComponent.LayerDepth = Layers.OnGround;
+                spriteComponent.LayerDepth = objectComponent.Type == Item.Minion ? Layers.Minion : Layers.OnGround;
             }
             else {
                 spriteComponent.LayerDepth = Layers.Air;

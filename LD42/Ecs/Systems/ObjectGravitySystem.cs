@@ -17,7 +17,8 @@ namespace LD42.Ecs.Systems {
             PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
 
             float floor = 0f;
-            if (_furnace.IsOpen && _furnace.Region.Contains(positionComponent.Position)) {
+            if ((_furnace.IsOpen && _furnace.Region.Contains(positionComponent.Position))
+                || positionComponent.Depth < 0f) {
                 floor = -100f;
             }
 

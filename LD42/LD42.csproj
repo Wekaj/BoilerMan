@@ -44,17 +44,20 @@
     <Compile Include="Ecs\Components\AnimationComponent.cs" />
     <Compile Include="Ecs\Components\ForceComponent.cs" />
     <Compile Include="Ecs\Components\HandComponent.cs" />
+    <Compile Include="Ecs\Components\MinionComponent.cs" />
     <Compile Include="Ecs\Components\ObjectComponent.cs" />
     <Compile Include="Ecs\Components\PositionComponent.cs" />
     <Compile Include="Ecs\Components\SpriteComponent.cs" />
     <Compile Include="Ecs\Components\ToolComponent.cs" />
     <Compile Include="Ecs\Components\VelocityComponent.cs" />
     <Compile Include="Ecs\Systems\AnimationSystem.cs" />
+    <Compile Include="Ecs\Systems\ArmDrawingSystem.cs" />
     <Compile Include="Ecs\Systems\EntityUpdatingSystem.cs" />
     <Compile Include="Ecs\Systems\ForceSystem.cs" />
     <Compile Include="Ecs\Systems\HandRotationSystem.cs" />
     <Compile Include="Ecs\Systems\HandTargetSystem.cs" />
     <Compile Include="Ecs\Systems\HoldingSystem.cs" />
+    <Compile Include="Ecs\Systems\MinionSystem.cs" />
     <Compile Include="Ecs\Systems\ObjectCollisionSystem.cs" />
     <Compile Include="Ecs\Systems\ObjectBoundariesSystem.cs" />
     <Compile Include="Ecs\Systems\ObjectGravitySystem.cs" />
@@ -72,6 +75,7 @@
     <Compile Include="Screens\IScreen.cs" />
     <Compile Include="Tools\Furnace.cs" />
     <Compile Include="Tools\ITool.cs" />
+    <Compile Include="Tools\SimpleTool.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="artemis, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">

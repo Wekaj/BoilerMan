@@ -20,16 +20,18 @@ namespace LD42.Screens {
         private readonly EntityWorld _entityWorld;
         private readonly Rectangle _ground, _box;
         private readonly Furnace _furnace;
+        private readonly SimpleTool _musicBox;
 
         private readonly SpriteBatch _spriteBatch;
 
         private Texture2D _groundTexture, _gateTexture, _boxTexture, _coalTexture,
             _handOpenTexture, _handGrabTexture, _pixelTexture, _blueSeedTexture,
-            _blueSaplingTexture, _bluePlantTexture;
+            _blueSaplingTexture, _bluePlantTexture, _minionTexture, _coalLargeTexture,
+            _armTexture;
 
         private Entity _hand, _object;
 
-        private float _coalTimer = 0f, _coalPeriod = 1f;
+        private float _coalTimer = 0f, _coalPeriod = 0.5f;
 
         private float _flamePower = 20f, _flameShift = 0f;
 
@@ -50,17 +52,18 @@ namespace LD42.Screens {
                 154f - _box.Height / 2f);
             
             _furnace = new Furnace(new Rectangle(_ground.Left, _ground.Top, 448, 128));
+            _musicBox = new SimpleTool();
 
             _spriteBatch = new SpriteBatch(game.GraphicsDevice);
 
-            CreateSystems();
-
             LoadContent(game.Content);
 
-            CreateHand(_box.Center.ToVector2() + new Vector2(192f, 32f));
-            CreateHand(_box.Center.ToVector2() + new Vector2(-192f, 32f));
-            CreateHand(_box.Center.ToVector2() + new Vector2(128f, 128f));
-            CreateHand(_box.Center.ToVector2() + new Vector2(-128f, 128f));
+            CreateSystems();
+
+            CreateHand(_box.Center.ToVector2() + new Vector2(192f, 32f), _box.Center.ToVector2());
+            CreateHand(_box.Center.ToVector2() + new Vector2(-192f, 32f), _box.Center.ToVector2());
+            CreateHand(_box.Center.ToVector2() + new Vector2(128f, 128f), _box.Center.ToVector2());
+            CreateHand(_box.Center.ToVector2() + new Vector2(-128f, 128f), _box.Center.ToVector2());
 
             Entity tool = _entityWorld.CreateEntity();
             tool.AddComponent(new PositionComponent(new Vector2(16f, 64f)));
@@ -74,11 +77,23 @@ namespace LD42.Screens {
             seedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
                 SpawnerType = Item.BlueSeed
             });
+
+            Entity musicBox = _entityWorld.CreateEntity();
+            musicBox.AddComponent(new PositionComponent(new Vector2(16f, _game.GraphicsDevice.Viewport.Height - 32f)));
+            musicBox.AddComponent(new ToolComponent(_musicBox, 16f, t => {
+                float p = (t % 2f) / 2f;
+                return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 16f, (float)Math.Sin(p * MathHelper.TwoPi) * 16f);
+            }));
+
+            for (int i = 0; i < 6; i++) {
+                Create(Item.Minion, _ground.Center.ToVector2());
+            }
         }
 
         private void CreateSystems() {
             _entityWorld.SystemManager.SetSystem(new ToolUpdatingSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new HoldingSystem(), GameLoopType.Update);
+            _entityWorld.SystemManager.SetSystem(new MinionSystem(_furnace, _musicBox), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ObjectCollisionSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ObjectBoundariesSystem(_ground, _box), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ObjectGravitySystem(_furnace), GameLoopType.Update);
@@ -90,6 +105,7 @@ namespace LD42.Screens {
             _entityWorld.SystemManager.SetSystem(new HandRotationSystem(_box.Center.ToVector2()), GameLoopType.Draw);
             _entityWorld.SystemManager.SetSystem(new ObjectSortingSystem(), GameLoopType.Draw);
             _entityWorld.SystemManager.SetSystem(new SpriteDrawingSystem(_spriteBatch), GameLoopType.Draw);
+            _entityWorld.SystemManager.SetSystem(new ArmDrawingSystem(_spriteBatch, _armTexture), GameLoopType.Draw);
         }
 
         private void LoadContent(ContentManager content) {
@@ -103,14 +119,17 @@ namespace LD42.Screens {
             _blueSeedTexture = content.Load<Texture2D>("Textures/blue_seed");
             _blueSaplingTexture = content.Load<Texture2D>("Textures/blue_sapling");
             _bluePlantTexture = content.Load<Texture2D>("Textures/blue_plant");
+            _minionTexture = content.Load<Texture2D>("Textures/minion");
+            _coalLargeTexture = content.Load<Texture2D>("Textures/coal_large");
+            _armTexture = content.Load<Texture2D>("Textures/arm");
         }
 
-        private void CreateHand(Vector2 position) {
+        private void CreateHand(Vector2 position, Vector2 shoulder) {
             Entity hand = _entityWorld.CreateEntity();
             hand.AddComponent(new PositionComponent(position) { Depth = 50f });
             hand.AddComponent(new VelocityComponent(1000f));
             hand.AddComponent(new ForceComponent(2f));
-            hand.AddComponent(new HandComponent(position, 50f));
+            hand.AddComponent(new HandComponent(shoulder, position, 50f));
             hand.AddComponent(new SpriteComponent(_handOpenTexture, _handOpenTexture.Bounds.Center.ToVector2()) {
                 LayerDepth = Layers.Hands
             });
@@ -130,6 +149,9 @@ namespace LD42.Screens {
                 case Item.BluePlant: {
                     return CreateBluePlant(position);
                 }
+                case Item.Minion: {
+                    return CreateMinion(position);
+                }
                 default: {
                     return null;
                 }
@@ -147,6 +169,12 @@ namespace LD42.Screens {
         }
 
         private Entity CreateCoal(Vector2 position) {
+            int r = _random.Next(100);
+            if (r < 20) {
+                Entity coal = CreateItem(position, Item.Coal, 23f, _coalLargeTexture, (float)_random.NextDouble() * MathHelper.TwoPi);
+                coal.GetComponent<ForceComponent>().Mass = 2f;
+                return coal;
+            }
             return CreateItem(position, Item.Coal, 15f, _coalTexture, (float)_random.NextDouble() * MathHelper.TwoPi);
         }
 
@@ -175,6 +203,14 @@ namespace LD42.Screens {
             plant.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
             plant.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
             return plant;
+        }
+
+        private Entity CreateMinion(Vector2 position) {
+            Entity minion = CreateItem(position, Item.Minion, 13f, _minionTexture);
+            minion.AddComponent(new MinionComponent());
+
+            minion.GetComponent<ObjectComponent>().IsSolid = false;
+            return minion;
         }
 
         private void GrabItem(Entity hand, Entity item) {
@@ -374,12 +410,12 @@ namespace LD42.Screens {
 
                 if (positionComponent.Depth < -50f) {
                     entity.Delete();
-                    _flameShift += 0.15f;
+                    _flameShift += 0.11f;
                 }
                 else {
                     ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
 
-                    if (objectComponent.TransformType != Item.None) {
+                    if (objectComponent.TransformType != Item.None && !objectComponent.IsHeld) {
                         objectComponent.TransformTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
                         if (objectComponent.TransformTimer <= 0f) {
                             entity.Delete();

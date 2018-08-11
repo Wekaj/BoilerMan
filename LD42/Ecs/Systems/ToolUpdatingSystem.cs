@@ -10,9 +10,7 @@ namespace LD42.Ecs.Systems {
         public override void Process(Entity entity) {
             ToolComponent toolComponent = entity.GetComponent<ToolComponent>();
 
-            if (toolComponent.HoldingHand != null) {
-                toolComponent.Tool?.Update(DeltaTime);
-            }
+            toolComponent.Tool?.Update(DeltaTime, toolComponent.HoldingHand != null);
         }
     }
 }

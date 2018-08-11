@@ -28,7 +28,8 @@ namespace LD42.Ecs.Systems {
             ObjectComponent objectComponent1 = entity1.GetComponent<ObjectComponent>(),
                 objectComponent2 = entity2.GetComponent<ObjectComponent>();
 
-            if (objectComponent1.IsHeld || objectComponent2.IsHeld) {
+            if (objectComponent1.IsHeld || objectComponent2.IsHeld
+                || !objectComponent1.IsSolid || !objectComponent2.IsSolid) {
                 return;
             }
 

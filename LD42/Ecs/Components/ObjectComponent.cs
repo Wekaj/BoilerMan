@@ -16,5 +16,9 @@ namespace LD42.Ecs.Components {
         public float TransformTimer { get; set; } = 0f;
 
         public Item SpawnerType { get; set; } = Item.None;
+
+        public bool IsSolid { get; set; } = true;
+
+        public bool IsMarked { get; set; } = false;
     }
 }
