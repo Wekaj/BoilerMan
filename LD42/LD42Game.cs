@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using LD42.Screens;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
@@ -9,10 +10,16 @@ namespace LD42 {
     public sealed class LD42Game : Game {
         private readonly GraphicsDeviceManager _graphics;
 
-        private SpriteBatch _spriteBatch;
+        private IScreen _screen;
 
         public LD42Game() {
-            _graphics = new GraphicsDeviceManager(this);
+            _graphics = new GraphicsDeviceManager(this) {
+                PreferredBackBufferWidth = 620,
+                PreferredBackBufferHeight = 540
+            };
+
+            IsMouseVisible = true;
+
             Content.RootDirectory = "Content";
         }
 
@@ -33,10 +40,9 @@ namespace LD42 {
         /// all of your content.
         /// </summary>
         protected override void LoadContent() {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            _spriteBatch = new SpriteBatch(GraphicsDevice);
-
             // TODO: use this.Content to load your game content here
+
+            _screen = new GameScreen(this);
         }
 
         /// <summary>
@@ -56,7 +62,7 @@ namespace LD42 {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            // TODO: Add your update logic here
+            _screen.Update(gameTime);
 
             base.Update(gameTime);
         }
@@ -66,9 +72,9 @@ namespace LD42 {
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime) {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
+            GraphicsDevice.Clear(Color.Black);
 
-            // TODO: Add your drawing code here
+            _screen.Draw(gameTime);
 
             base.Draw(gameTime);
         }
