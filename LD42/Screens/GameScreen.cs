@@ -1,5 +1,6 @@
 ﻿using Artemis;
 using Artemis.Manager;
+using Artemis.Utils;
 using LD42.Ecs.Components;
 using LD42.Ecs.Systems;
 using LD42.Graphics;
@@ -36,9 +37,14 @@ namespace LD42.Screens {
             _goldPlantTexture, _borderTexture, _shadowTexture, _paperTexture,
             _tempBorderTexture, _tempFillTexture;
         private SoundEffect _swishSound, _swoshSound, _bonkSound, _grindSound, _grind2Sound, _musicSound,
-            _clickSound, _paperSound, _pffSound, _popSound, _gateOpenSound, _gateCloseSound;
+            _clickSound, _paperSound, _pffSound, _popSound, _gateOpenSound, _gateCloseSound, _failSound,
+            _hissSound, _warningSound, _finalWarningSound;
 
-        private SoundEffectInstance _furnaceWheelSound, _bellowsWheelSound, _musicBoxSound;
+        private SoundEffectInstance _furnaceWheelSound, _bellowsWheelSound, _musicBoxSound, _bellowsDangerSound,
+            _warningDangerSound, _finalWarningDangerSound;
+
+        private float _timer = 0f;
+        private int _orders = 0;
 
         private Entity _hand, _object;
 
@@ -57,9 +63,11 @@ namespace LD42.Screens {
 
         private readonly List<Item> _herbQueue = new List<Item>();
         private float _requestTimer = 0f;
-        private float _requestInterval = 20f;
+        private float _requestInterval = 18f;
 
         private float _lastHerbX = 0f;
+
+        private int _count = 0;
 
         public GameScreen(LD42Game game) {
             _game = game;
@@ -206,6 +214,10 @@ namespace LD42.Screens {
             _popSound = content.Load<SoundEffect>("Sounds/pop");
             _gateOpenSound = content.Load<SoundEffect>("Sounds/gate_open");
             _gateCloseSound = content.Load<SoundEffect>("Sounds/gate_close");
+            _failSound = content.Load<SoundEffect>("Sounds/fail");
+            _hissSound = content.Load<SoundEffect>("Sounds/hiss");
+            _warningSound = content.Load<SoundEffect>("Sounds/warning");
+            _finalWarningSound = content.Load<SoundEffect>("Sounds/final_warning");
 
             _furnaceWheelSound = _grindSound.CreateInstance();
             _furnaceWheelSound.IsLooped = true;
@@ -219,6 +231,16 @@ namespace LD42.Screens {
             _musicBoxSound.IsLooped = true;
             _musicBoxSound.Play();
             _musicBoxSound.Pause();
+
+            _bellowsDangerSound = _hissSound.CreateInstance();
+            _bellowsDangerSound.IsLooped = true;
+            _bellowsDangerSound.Pan = 0.1f;
+
+            _warningDangerSound = _warningSound.CreateInstance();
+            _warningDangerSound.IsLooped = true;
+
+            _finalWarningDangerSound = _finalWarningSound.CreateInstance();
+            _finalWarningDangerSound.IsLooped = true;
         }
 
         private void CreateHand(Vector2 position, Vector2 shoulder) {
@@ -540,6 +562,8 @@ namespace LD42.Screens {
         }
 
         public void Update(GameTime gameTime) {
+            _timer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+
             _entityWorld.Update(gameTime.ElapsedGameTime.Ticks);
 
             MouseState mouseState = Mouse.GetState();
@@ -655,7 +679,7 @@ namespace LD42.Screens {
             }
 
             if (_coalPeriod > 0.65f) {
-                _coalPeriod -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.02f;
+                _coalPeriod -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.03f;
                 _coalPeriod = Math.Max(_coalPeriod, 0.65f);
             }
 
@@ -683,7 +707,26 @@ namespace LD42.Screens {
                 _minionTimer = 0.1f + (float)_random.NextDouble() * 0.4f;
             }
 
-            foreach (Entity entity in _entityWorld.EntityManager.GetEntities(Aspect.All(typeof(ObjectComponent)))) {
+            Bag<Entity> entities = _entityWorld.EntityManager.GetEntities(Aspect.All(typeof(ObjectComponent)));
+            _count = entities.Count;
+            if (entities.Count > 60) {
+                Death("_over");
+                return;
+            }
+            else if (entities.Count > 55) {
+                _finalWarningDangerSound.Play();
+                _warningDangerSound.Pause();
+            }
+            else if (entities.Count > 45) {
+                _warningDangerSound.Play();
+                _finalWarningDangerSound.Pause();
+            }
+            else {
+                _finalWarningDangerSound.Pause();
+                _warningDangerSound.Pause();
+            }
+
+            foreach (Entity entity in entities) {
                 PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
 
                 if (positionComponent.Depth < -50f) {
@@ -709,6 +752,8 @@ namespace LD42.Screens {
                                 _herbQueue.RemoveAt(0);
 
                                 _clickSound.Play();
+
+                                _orders++;
                             }
                             break;
                         }
@@ -813,6 +858,19 @@ namespace LD42.Screens {
                 _flamePower = Math.Max(_flamePower, 0f);
             }
 
+            if (_flamePower < 100f) {
+                _bellowsDangerSound.Play();
+                _bellowsDangerSound.Volume = 1f - (_flamePower / 100f);
+            }
+            else {
+                _bellowsDangerSound.Pause();
+            }
+
+            if (_flamePower <= 0f) {
+                Death("_temp");
+                return;
+            }
+
             _requestTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
             if (_requestTimer >= _requestInterval) {
                 _requestTimer -= _requestInterval;
@@ -843,9 +901,13 @@ namespace LD42.Screens {
 
                 _lastHerbX = _game.GraphicsDevice.Viewport.Width + 8f;
 
-                if (_requestInterval > 5f) {
-                    _requestInterval -= 0.5f;
+                if (_requestInterval > 4f) {
+                    _requestInterval -= 0.75f;
                 }
+            }
+
+            if (_herbQueue.Count > 11) {
+                Death("_order");
             }
 
             if (_herbQueue.Count > 0) {
@@ -902,6 +964,21 @@ namespace LD42.Screens {
             }
         }
 
+        private void Death(string extra) {
+            int score = 1 + (int)(_timer / 30f) + (_orders / 2);
+
+            _game.Screen = new MenuScreen(_game, extra, score);
+
+            _musicBoxSound.Stop();
+            _bellowsWheelSound.Stop();
+            _furnaceWheelSound.Stop();
+            _bellowsDangerSound.Stop();
+            _warningDangerSound.Stop();
+            _finalWarningDangerSound.Stop();
+
+            _failSound.Play();
+        }
+
         public void Draw(GameTime gameTime) {
             _spriteBatch.Begin(sortMode: SpriteSortMode.FrontToBack, samplerState: SamplerState.PointClamp);
 
@@ -932,6 +1009,12 @@ namespace LD42.Screens {
                 _spriteBatch.Draw(_tempBorderTexture, new Vector2(_game.GraphicsDevice.Viewport.Width - 32f, 160f),
                     origin: new Vector2(_tempFillTexture.Width, _tempFillTexture.Height) / 2f, layerDepth: Layers.UI);
             }
+
+            float p = 1f - _count / 60f;
+            _spriteBatch.Draw(_tempFillTexture, new Vector2(56f, _game.GraphicsDevice.Viewport.Height - 48f + _tempFillTexture.Height / 2f),
+                origin: new Vector2(_tempFillTexture.Width / 2f, _tempFillTexture.Height), scale: new Vector2(1f, p), layerDepth: Layers.UI - 0.001f);
+            _spriteBatch.Draw(_tempBorderTexture, new Vector2(56f, _game.GraphicsDevice.Viewport.Height - 48f),
+                origin: new Vector2(_tempFillTexture.Width, _tempFillTexture.Height) / 2f, layerDepth: Layers.UI);
 
             for (int i = 0; i < _herbQueue.Count; i++) {
                 Texture2D texture = null;

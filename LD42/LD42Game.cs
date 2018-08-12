@@ -10,8 +10,6 @@ namespace LD42 {
     public sealed class LD42Game : Game {
         private readonly GraphicsDeviceManager _graphics;
 
-        private IScreen _screen;
-
         public LD42Game() {
             _graphics = new GraphicsDeviceManager(this) {
                 PreferredBackBufferWidth = 620,
@@ -22,6 +20,8 @@ namespace LD42 {
 
             Content.RootDirectory = "Content";
         }
+
+        public IScreen Screen { get; set; }
 
         /// <summary>
         /// Allows the game to perform any initialization it needs to before starting to run.
@@ -42,7 +42,7 @@ namespace LD42 {
         protected override void LoadContent() {
             // TODO: use this.Content to load your game content here
 
-            _screen = new GameScreen(this);
+            Screen = new MenuScreen(this);
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace LD42 {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
                 Exit();
 
-            _screen.Update(gameTime);
+            Screen.Update(gameTime);
 
             base.Update(gameTime);
         }
@@ -74,7 +74,7 @@ namespace LD42 {
         protected override void Draw(GameTime gameTime) {
             GraphicsDevice.Clear(Color.Black);
 
-            _screen.Draw(gameTime);
+            Screen.Draw(gameTime);
 
             base.Draw(gameTime);
         }
