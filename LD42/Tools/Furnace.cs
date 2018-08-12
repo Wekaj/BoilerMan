@@ -9,11 +9,15 @@ namespace LD42.Tools {
             Region = region;
         }
 
+        public bool IsActive { get; private set; }
+
         public Rectangle Region { get; }
         public bool IsOpen => Timer > ClosedTime;
         public float Timer { get; private set; }
 
         public void Update(TimeSpan deltaTime, bool isActive) {
+            IsActive = isActive;
+
             if (isActive) {
                 Timer += (float)deltaTime.TotalSeconds;
                 Timer %= TotalTime;

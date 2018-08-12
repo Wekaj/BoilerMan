@@ -6,6 +6,7 @@ using LD42.Graphics;
 using LD42.Items;
 using LD42.Tools;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -32,6 +33,9 @@ namespace LD42.Screens {
             _redSaplingTexture, _redPlantTexture, _greenSeedTexture, _greenSaplingTexture,
             _greenPlantTexture, _blueSeedTexture, _blueSaplingTexture, _bluePlantTexture,
             _goldPlantTexture, _borderTexture;
+        private SoundEffect _swishSound, _swoshSound, _bonkSound, _grindSound, _grind2Sound, _musicSound;
+
+        private SoundEffectInstance _furnaceWheelSound, _bellowsWheelSound, _musicBoxSound;
 
         private Entity _hand, _object;
 
@@ -87,47 +91,47 @@ namespace LD42.Screens {
 
             Entity bellows = _entityWorld.CreateEntity();
             bellows.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 64f, 160f)));
-            bellows.AddComponent(new ToolComponent(_bellows, 16f, t => {
+            bellows.AddComponent(new ToolComponent(_bellows, 24f, t => {
                 float p = (t % 1.5f) / 1.5f;
                 return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 8f, (float)Math.Sin(p * MathHelper.TwoPi) * 32f);
             }));
 
-            Entity soulSeedBox = _entityWorld.CreateEntity();
-            soulSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 16f)));
-            soulSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
-                SpawnerType = Item.SoulSeed
-            });
-
-            Entity redSeedBox = _entityWorld.CreateEntity();
-            redSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 48f)));
-            redSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
-                SpawnerType = Item.RedSeed
-            });
-
-            Entity greenSeedBox = _entityWorld.CreateEntity();
-            greenSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 80f)));
-            greenSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
-                SpawnerType = Item.GreenSeed
-            });
-
-            Entity blueSeedBox = _entityWorld.CreateEntity();
-            blueSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 112f)));
-            blueSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
-                SpawnerType = Item.BlueSeed
-            });
+            Entity skylight = _entityWorld.CreateEntity();
+            skylight.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 44f, 256f)));
+            skylight.AddComponent(new ToolComponent(_skylight, 16f, t => {
+                return Vector2.Zero;
+            }));
 
             Entity musicBox = _entityWorld.CreateEntity();
-            musicBox.AddComponent(new PositionComponent(new Vector2(16f, _game.GraphicsDevice.Viewport.Height - 32f)));
-            musicBox.AddComponent(new ToolComponent(_musicBox, 16f, t => {
+            musicBox.AddComponent(new PositionComponent(new Vector2(50f, 304f)));
+            musicBox.AddComponent(new ToolComponent(_musicBox, 20f, t => {
                 float p = (t % 2f) / 2f;
                 return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 16f, (float)Math.Sin(p * MathHelper.TwoPi) * 16f);
             }));
 
-            Entity skylight = _entityWorld.CreateEntity();
-            skylight.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, 192f)));
-            skylight.AddComponent(new ToolComponent(_skylight, 16f, t => {
-                return Vector2.Zero;
-            }));
+            Entity greenSeedBox = _entityWorld.CreateEntity();
+            greenSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 42f, _game.GraphicsDevice.Viewport.Height - 206f)));
+            greenSeedBox.AddComponent(new ObjectComponent(Item.None, 24f) {
+                SpawnerType = Item.GreenSeed
+            });
+
+            Entity redSeedBox = _entityWorld.CreateEntity();
+            redSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 42f, _game.GraphicsDevice.Viewport.Height - 154f)));
+            redSeedBox.AddComponent(new ObjectComponent(Item.None, 24f) {
+                SpawnerType = Item.RedSeed
+            });
+
+            Entity blueSeedBox = _entityWorld.CreateEntity();
+            blueSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 42f, _game.GraphicsDevice.Viewport.Height - 102f)));
+            blueSeedBox.AddComponent(new ObjectComponent(Item.None, 24f) {
+                SpawnerType = Item.BlueSeed
+            });
+
+            Entity soulSeedBox = _entityWorld.CreateEntity();
+            soulSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 42f, _game.GraphicsDevice.Viewport.Height - 52f)));
+            soulSeedBox.AddComponent(new ObjectComponent(Item.None, 24f) {
+                SpawnerType = Item.SoulSeed
+            });
 
             Console.WriteLine(_ground.Left + ", " + _ground.Bottom);
         }
@@ -138,7 +142,7 @@ namespace LD42.Screens {
             _entityWorld.SystemManager.SetSystem(new MinionSystem(_furnace, _musicBox), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ObjectCollisionSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ObjectBoundariesSystem(_ground, _box), GameLoopType.Update);
-            _entityWorld.SystemManager.SetSystem(new ObjectGravitySystem(_furnace), GameLoopType.Update);
+            _entityWorld.SystemManager.SetSystem(new ObjectGravitySystem(_furnace, _bonkSound), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new ForceSystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new VelocitySystem(), GameLoopType.Update);
             _entityWorld.SystemManager.SetSystem(new HandTargetSystem(), GameLoopType.Update);
@@ -177,6 +181,24 @@ namespace LD42.Screens {
             _jointTexture = content.Load<Texture2D>("Textures/joint");
             _madPlantTexture = content.Load<Texture2D>("Textures/mad_plant");
             _borderTexture = content.Load<Texture2D>("Textures/border");
+
+            _swishSound = content.Load<SoundEffect>("Sounds/swish");
+            _swoshSound = content.Load<SoundEffect>("Sounds/swosh");
+            _bonkSound = content.Load<SoundEffect>("Sounds/bonk");
+            _grindSound = content.Load<SoundEffect>("Sounds/grind");
+            _grind2Sound = content.Load<SoundEffect>("Sounds/grind2");
+            _musicSound = content.Load<SoundEffect>("Sounds/music");
+
+            _furnaceWheelSound = _grindSound.CreateInstance();
+            _furnaceWheelSound.IsLooped = true;
+            _furnaceWheelSound.Pan = -0.25f;
+
+            _bellowsWheelSound = _grind2Sound.CreateInstance();
+            _bellowsWheelSound.IsLooped = true;
+            _bellowsWheelSound.Pan = 0.25f;
+
+            _musicBoxSound = _musicSound.CreateInstance();
+            _musicBoxSound.IsLooped = true;
         }
 
         private void CreateHand(Vector2 position, Vector2 shoulder) {
@@ -434,6 +456,8 @@ namespace LD42.Screens {
 
                 SpriteComponent spriteComponent = hand.GetComponent<SpriteComponent>();
                 spriteComponent.Texture = _handGrabTexture;
+
+                _swishSound.Play();
             }
         }
 
@@ -452,6 +476,8 @@ namespace LD42.Screens {
 
                 SpriteComponent spriteComponent = hand.GetComponent<SpriteComponent>();
                 spriteComponent.Texture = _handOpenTexture;
+
+                _swoshSound.Play();
             }
         }
 
@@ -792,6 +818,27 @@ namespace LD42.Screens {
             else {
                 _furnaceAnimation -= (float)gameTime.ElapsedGameTime.TotalSeconds;
                 _furnaceAnimation = Math.Max(_furnaceAnimation, 0f);
+            }
+
+            if (_furnace.IsActive) {
+                _furnaceWheelSound.Play();
+            }
+            else {
+                _furnaceWheelSound.Pause();
+            }
+
+            if (_bellows.IsActive) {
+                _bellowsWheelSound.Play();
+            }
+            else {
+                _bellowsWheelSound.Pause();
+            }
+
+            if (_musicBox.IsActive) {
+                _musicBoxSound.Play();
+            }
+            else {
+                _musicBoxSound.Pause();
             }
         }
 
