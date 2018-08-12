@@ -18,6 +18,15 @@ namespace LD42.Ecs.Systems {
             _musicBox = musicBox;
         }
 
+        private Vector2 GetNowhereTarget(Vector2 offset, bool left) {
+            if (left) {
+                return _furnace.Region.Location.ToVector2() + new Vector2(100f, _furnace.Region.Height + 160f) + offset * 2.5f;
+            }
+            else {
+                return _furnace.Region.Location.ToVector2() + new Vector2(_furnace.Region.Width - 100f, _furnace.Region.Height + 160f) + offset * 2.5f;
+            }
+        }
+
         public override void Process(Entity entity) {
             PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
             ForceComponent forceComponent = entity.GetComponent<ForceComponent>();
@@ -92,7 +101,7 @@ namespace LD42.Ecs.Systems {
             }
 
             if (minionComponent.Intelligence > 50 && (positionComponent.Position.Y <= _furnace.Region.Bottom + safetyDistance && _furnace.Timer > Furnace.ClosedTime - 1f)) {
-                Vector2 target = _furnace.Region.Center.ToVector2() + new Vector2(0f, 192f) + minionComponent.Offset * 2f;
+                Vector2 target = GetNowhereTarget(minionComponent.Offset, minionComponent.Leftie);
 
                 forceComponent.Force += Vector2.Normalize(target - positionComponent.Position) * speed;
             }
@@ -121,7 +130,7 @@ namespace LD42.Ecs.Systems {
                 }
             }
             else {
-                Vector2 target = _furnace.Region.Center.ToVector2() + new Vector2(0f, 160f) + minionComponent.Offset * 2f;
+                Vector2 target = GetNowhereTarget(minionComponent.Offset, minionComponent.Leftie);
 
                 forceComponent.Force += Vector2.Normalize(target - positionComponent.Position) * speed;
             }

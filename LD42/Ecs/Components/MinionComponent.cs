@@ -11,5 +11,6 @@ namespace LD42.Ecs.Components {
         public Vector2 Offset { get; set; }
         public int Intelligence { get; set; } = _random.Next(100);
         public float Tendency { get; set; } = (float)_random.NextDouble();
+        public bool Leftie { get; set; } = _random.Next(2) == 0;
     }
 }

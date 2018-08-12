@@ -805,11 +805,11 @@ namespace LD42.Screens {
             }
 
             if (_bellows.IsActive) {
-                _flamePower += 10f * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                _flamePower += 15f * (float)gameTime.ElapsedGameTime.TotalSeconds;
                 _flamePower = Math.Min(_flamePower, 100f);
             }
             else {
-                _flamePower -= 5f * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                _flamePower -= 10f * (float)gameTime.ElapsedGameTime.TotalSeconds;
                 _flamePower = Math.Max(_flamePower, 0f);
             }
 

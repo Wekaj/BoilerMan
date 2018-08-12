@@ -14,11 +14,13 @@ namespace LD42.Ecs.Systems {
 
             if (handComponent.HeldItem != null) {
                 ObjectComponent heldObjectComponent = handComponent.HeldItem.GetComponent<ObjectComponent>();
-                heldObjectComponent.IsHeld = true;
+                if (heldObjectComponent != null) {
+                    heldObjectComponent.IsHeld = true;
 
-                PositionComponent heldPositionComponent = handComponent.HeldItem.GetComponent<PositionComponent>();
-                heldPositionComponent.Position = positionComponent.Position;
-                heldPositionComponent.Depth = positionComponent.Depth;
+                    PositionComponent heldPositionComponent = handComponent.HeldItem.GetComponent<PositionComponent>();
+                    heldPositionComponent.Position = positionComponent.Position;
+                    heldPositionComponent.Depth = positionComponent.Depth;
+                }
             }
             else if (handComponent.HeldTool != null) {
                 handComponent.Timer += (float)DeltaTime.TotalSeconds;
