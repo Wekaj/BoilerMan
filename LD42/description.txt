@@ -1,0 +1,8 @@
+The most essential part of the steam engine, yes, it is the Boiler and his BoilerMan. Using his four arms the BoilerMan can operate all wheels and buttons that are necessary in the functioning of the Boiler, and then the Boiler can create the Steam. The BoilerMan can also grow all necessary Plants using the seeds and the available wheels and buttons, and the Plants can be fed to the Boiler when required to make the Boilers flame correct. But !!WARNING!! the BoilerMan must always make sure to keep the fire fed using the Bellows wheel, and most importantly the BoilerMan cannot let his workshop become crowded too much. To help with this, the BoilerMans best friend is the SootyBall. The BoilerMan must always have his SootyBall friends, and must always create more, because they fall into the Boilers flame often.
+
+Operations:
+ * Click the mouse button to perform all operations.
+ * One operation is to click a wheel or button. The BoilerMans closest free hand will begin standard operation procedure (SOP.)
+ * Another operation is to click an item. The BoilerMans closest free hand will attach to the item and commence next stage of item usage (NSoIU.)
+
+!!WARNING!!2 SootyBall plants need space to grow and otherwise will become ferocious!!

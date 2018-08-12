@@ -19,6 +19,8 @@ namespace LD42 {
             IsMouseVisible = true;
 
             Content.RootDirectory = "Content";
+
+            Window.Title = "ＢｏｉｌｅｒＭａｎ";
         }
 
         public IScreen Screen { get; set; }

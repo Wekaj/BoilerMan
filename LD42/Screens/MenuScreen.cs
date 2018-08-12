@@ -35,7 +35,7 @@ namespace LD42.Screens {
             
             _isPressed = Mouse.GetState().LeftButton == ButtonState.Pressed;
 
-            if (_hasBeenReleased && !_isPressed && wasPressed) {
+            if (_hasBeenReleased && !_isPressed && wasPressed && _game.IsActive) {
                 _game.Screen = new GameScreen(_game);
 
                 _swishSound.Play();
