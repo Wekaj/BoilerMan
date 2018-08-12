@@ -12,6 +12,10 @@
         RedPlant,
         GreenSeed,
         GreenSapling,
-        GreenPlant
+        GreenPlant,
+        BlueSeed,
+        BlueSapling,
+        BluePlant,
+        GoldPlant
     }
 }

@@ -10,6 +10,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System;
+using System.Collections.Generic;
 
 namespace LD42.Screens {
     public sealed class GameScreen : IScreen {
@@ -25,23 +26,28 @@ namespace LD42.Screens {
         private readonly SpriteBatch _spriteBatch;
 
         private Texture2D _groundTexture, _gateTexture, _boxTexture, _coalTexture,
-            _handOpenTexture, _handGrabTexture, _pixelTexture, _blueSeedTexture,
-            _blueSaplingTexture, _bluePlantTexture, _minionTexture, _coalLargeTexture,
+            _handOpenTexture, _handGrabTexture, _pixelTexture, _soulSeedTexture,
+            _soulSaplingTexture, _soulPlantTexture, _minionTexture, _coalLargeTexture,
             _armTexture, _jointTexture, _madPlantTexture, _redSeedTexture,
             _redSaplingTexture, _redPlantTexture, _greenSeedTexture, _greenSaplingTexture,
-            _greenPlantTexture;
+            _greenPlantTexture, _blueSeedTexture, _blueSaplingTexture, _bluePlantTexture,
+            _goldPlantTexture;
 
         private Entity _hand, _object;
 
         private float _coalTimer = 0f, _coalPeriod = 3f;
 
-        private float _flamePower = 0f, _flameShift = 0f;
+        private float _flamePower = 100f;
 
         private const float _furnaceAnimationDuration = 0.075f;
         private float _furnaceAnimation = 0f;
 
         private int _incomingMinions;
         private float _minionTimer;
+
+        private readonly List<Item> _herbQueue = new List<Item>();
+        private float _requestTimer = 0f;
+        private float _requestInterval = 15f;
 
         public GameScreen(LD42Game game) {
             _game = game;
@@ -67,10 +73,10 @@ namespace LD42.Screens {
 
             CreateSystems();
 
-            CreateHand(_box.Center.ToVector2() + new Vector2(192f, 32f), _box.Center.ToVector2());
-            CreateHand(_box.Center.ToVector2() + new Vector2(-192f, 32f), _box.Center.ToVector2());
-            CreateHand(_box.Center.ToVector2() + new Vector2(128f, 128f), _box.Center.ToVector2());
-            CreateHand(_box.Center.ToVector2() + new Vector2(-128f, 128f), _box.Center.ToVector2());
+            CreateHand(_box.Center.ToVector2() + new Vector2(192f, 32f), _box.Center.ToVector2() + new Vector2(16f, -8f));
+            CreateHand(_box.Center.ToVector2() + new Vector2(-192f, 32f), _box.Center.ToVector2() + new Vector2(-16f, -8f));
+            CreateHand(_box.Center.ToVector2() + new Vector2(128f, 128f), _box.Center.ToVector2() + new Vector2(12f, 8f));
+            CreateHand(_box.Center.ToVector2() + new Vector2(-128f, 128f), _box.Center.ToVector2() + new Vector2(-12f, 8f));
 
             Entity tool = _entityWorld.CreateEntity();
             tool.AddComponent(new PositionComponent(new Vector2(16f, 64f)));
@@ -95,6 +101,12 @@ namespace LD42.Screens {
             greenSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 80f)));
             greenSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
                 SpawnerType = Item.GreenSeed
+            });
+
+            Entity blueSeedBox = _entityWorld.CreateEntity();
+            blueSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 112f)));
+            blueSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
+                SpawnerType = Item.BlueSeed
             });
 
             Entity musicBox = _entityWorld.CreateEntity();
@@ -144,15 +156,19 @@ namespace LD42.Screens {
             _handOpenTexture = content.Load<Texture2D>("Textures/hand_open");
             _handGrabTexture = content.Load<Texture2D>("Textures/hand_grab");
             _pixelTexture = content.Load<Texture2D>("Textures/pixel");
-            _blueSeedTexture = content.Load<Texture2D>("Textures/blue_seed");
-            _blueSaplingTexture = content.Load<Texture2D>("Textures/blue_sapling");
-            _bluePlantTexture = content.Load<Texture2D>("Textures/blue_plant");
+            _soulSeedTexture = content.Load<Texture2D>("Textures/soul_seed");
+            _soulSaplingTexture = content.Load<Texture2D>("Textures/soul_sapling");
+            _soulPlantTexture = content.Load<Texture2D>("Textures/soul_plant");
             _redSeedTexture = content.Load<Texture2D>("Textures/red_seed");
             _redSaplingTexture = content.Load<Texture2D>("Textures/red_sapling");
             _redPlantTexture = content.Load<Texture2D>("Textures/red_plant");
             _greenSeedTexture = content.Load<Texture2D>("Textures/green_seed");
             _greenSaplingTexture = content.Load<Texture2D>("Textures/green_sapling");
             _greenPlantTexture = content.Load<Texture2D>("Textures/green_plant");
+            _blueSeedTexture = content.Load<Texture2D>("Textures/blue_seed");
+            _blueSaplingTexture = content.Load<Texture2D>("Textures/blue_sapling");
+            _bluePlantTexture = content.Load<Texture2D>("Textures/blue_plant");
+            _goldPlantTexture = content.Load<Texture2D>("Textures/gold_plant");
             _minionTexture = content.Load<Texture2D>("Textures/minion");
             _coalLargeTexture = content.Load<Texture2D>("Textures/coal_large");
             _armTexture = content.Load<Texture2D>("Textures/arm");
@@ -209,6 +225,18 @@ namespace LD42.Screens {
                 case Item.GreenPlant: {
                     return CreateGreenPlant(position);
                 }
+                case Item.BlueSeed: {
+                    return CreateBlueSeed(position);
+                }
+                case Item.BlueSapling: {
+                    return CreateBlueSapling(position);
+                }
+                case Item.BluePlant: {
+                    return CreateBluePlant(position);
+                }
+                case Item.GoldPlant: {
+                    return CreateGoldPlant(position);
+                }
                 default: {
                     return null;
                 }
@@ -236,11 +264,11 @@ namespace LD42.Screens {
         }
 
         private Entity CreateSoulSeed(Vector2 position) {
-            return CreateItem(position, Item.SoulSeed, 4f, _blueSeedTexture);
+            return CreateItem(position, Item.SoulSeed, 4f, _soulSeedTexture);
         }
 
         private Entity CreateSoulSapling(Vector2 position) {
-            Entity sapling = CreateItem(position, Item.SoulSapling, 12f, _blueSaplingTexture);
+            Entity sapling = CreateItem(position, Item.SoulSapling, 12f, _soulSaplingTexture);
             sapling.AddComponent(new AnimationComponent());
             sapling.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0).AddFrame(3, 0), 0.25f);
 
@@ -253,7 +281,7 @@ namespace LD42.Screens {
         }
 
         private Entity CreateSoulPlant(Vector2 position) {
-            Entity plant = CreateItem(position, Item.SoulPlant, 20f, _bluePlantTexture);
+            Entity plant = CreateItem(position, Item.SoulPlant, 20f, _soulPlantTexture);
             plant.AddComponent(new AnimationComponent());
             plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
 
@@ -275,7 +303,7 @@ namespace LD42.Screens {
             sapling.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
 
             sapling.GetComponent<ObjectComponent>().TransformType = Item.RedPlant;
-            sapling.GetComponent<ObjectComponent>().TransformTimer = 21f;
+            sapling.GetComponent<ObjectComponent>().TransformTimer = 9f;
             return sapling;
         }
 
@@ -308,6 +336,46 @@ namespace LD42.Screens {
 
         private Entity CreateGreenPlant(Vector2 position) {
             Entity plant = CreateItem(position, Item.GreenPlant, 20f, _greenPlantTexture);
+            plant.AddComponent(new AnimationComponent());
+            plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
+
+            plant.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
+            plant.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
+            return plant;
+        }
+
+        private Entity CreateBlueSeed(Vector2 position) {
+            return CreateItem(position, Item.BlueSeed, 4f, _blueSeedTexture);
+        }
+
+        private Entity CreateBlueSapling(Vector2 position) {
+            Entity sapling = CreateItem(position, Item.BlueSapling, 12f, _blueSaplingTexture);
+            sapling.AddComponent(new AnimationComponent());
+            sapling.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0).AddFrame(3, 0), 0.25f);
+
+            sapling.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 32, 32);
+            sapling.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
+
+            sapling.GetComponent<ObjectComponent>().TransformType = Item.BluePlant;
+            sapling.GetComponent<ObjectComponent>().TransformTimer = 17f;
+            return sapling;
+        }
+
+        private Entity CreateBluePlant(Vector2 position) {
+            Entity plant = CreateItem(position, Item.BluePlant, 20f, _bluePlantTexture);
+            plant.AddComponent(new AnimationComponent());
+            plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
+
+            plant.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
+            plant.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
+
+            plant.GetComponent<ObjectComponent>().TransformType = Item.GoldPlant;
+            plant.GetComponent<ObjectComponent>().TransformTimer = 17f;
+            return plant;
+        }
+
+        private Entity CreateGoldPlant(Vector2 position) {
+            Entity plant = CreateItem(position, Item.GoldPlant, 20f, _goldPlantTexture);
             plant.AddComponent(new AnimationComponent());
             plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
 
@@ -568,13 +636,18 @@ namespace LD42.Screens {
                     entity.Delete();
 
                     switch (objectComponent.Type) {
-                        case Item.Coal: {
-                            _flameShift += 0.11f;
-                            break;
-                        }
                         case Item.SoulPlant: {
                             _incomingMinions++;
                             _minionTimer = 0.1f + (float)_random.NextDouble() * 0.4f;
+                            break;
+                        }
+                        case Item.GreenPlant:
+                        case Item.RedPlant:
+                        case Item.BluePlant:
+                        case Item.GoldPlant: {
+                            if (_herbQueue.Count > 0 && _herbQueue[0] == objectComponent.Type) {
+                                _herbQueue.RemoveAt(0);
+                            }
                             break;
                         }
                     }
@@ -585,12 +658,18 @@ namespace LD42.Screens {
                     if (objectComponent.TransformType != Item.None && !objectComponent.IsHeld) {
                         bool growing = false;
 
-                        if (objectComponent.TransformType == Item.SoulPlant || objectComponent.TransformType == Item.GreenPlant) {
+                        if (objectComponent.TransformType == Item.SoulPlant 
+                            || objectComponent.TransformType == Item.GreenPlant
+                            || objectComponent.TransformType == Item.GoldPlant) {
                             growing = _skylight.IsActive;
                         }
 
                         if (objectComponent.TransformType == Item.RedPlant) {
-                            growing = _musicBox.IsActive;
+                            growing = _skylight.IsActive && _musicBox.IsActive;
+                        }
+
+                        if (objectComponent.TransformType == Item.BluePlant) {
+                            growing = !_skylight.IsActive;
                         }
 
                         if (growing) {
@@ -654,19 +733,53 @@ namespace LD42.Screens {
                             CreateGreenSapling(positionComponent.Position);
                         }
                     }
+                    else if (objectComponent.Type == Item.BlueSeed) {
+                        if (!objectComponent.IsHeld && positionComponent.Depth == 0f) {
+                            entity.Delete();
+                            CreateBlueSapling(positionComponent.Position);
+                        }
+                    }
                 }
             }
 
-            float shift = 0.4f;
             if (_bellows.IsActive) {
-                shift = 0.2f;
+                _flamePower += 10f * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                _flamePower = Math.Min(_flamePower, 100f);
             }
-            _flameShift -= (float)gameTime.ElapsedGameTime.TotalSeconds * shift;
-            _flamePower += _flameShift * (float)gameTime.ElapsedGameTime.TotalSeconds;
+            else {
+                _flamePower -= 5f * (float)gameTime.ElapsedGameTime.TotalSeconds;
+                _flamePower = Math.Max(_flamePower, 0f);
+            }
 
-            if (_flamePower < 0f) {
-                _flamePower = 0f;
-                _flameShift = 0f;
+            _requestTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
+            if (_requestTimer >= _requestInterval) {
+                _requestTimer -= _requestInterval;
+
+                Item item = Item.None;
+                if (_random.Next(6) == 0) {
+                    item = Item.GoldPlant;
+                }
+                else {
+                    switch (_random.Next(3)) {
+                        case 0: {
+                            item = Item.GreenPlant;
+                            break;
+                        }
+                        case 1: {
+                            item = Item.RedPlant;
+                            break;
+                        }
+                        case 2: {
+                            item = Item.BluePlant;
+                            break;
+                        }
+                    }
+                }
+                _herbQueue.Add(item);
+                
+                if (_requestInterval > 5f) {
+                    _requestInterval -= 0.5f;
+                }
             }
 
             if (_furnace.IsOpen) {
@@ -700,7 +813,31 @@ namespace LD42.Screens {
 
             _spriteBatch.Draw(_boxTexture, new Vector2(center.X, 154f), origin: _boxTexture.Bounds.Center.ToVector2(), layerDepth: Layers.AboveGround);
 
-            _spriteBatch.Draw(_pixelTexture, new Vector2(128f, 16f), color: Color.OrangeRed, scale: new Vector2(128f * _flamePower / 100f, 16f));
+            _spriteBatch.Draw(_pixelTexture, new Vector2(128f, 16f), color: Color.OrangeRed, scale: new Vector2(128f * _flamePower / 100f, 16f), layerDepth: Layers.UI);
+
+            for (int i = 0; i < _herbQueue.Count; i++) {
+                Texture2D texture = null;
+                switch (_herbQueue[i]) {
+                    case Item.GreenPlant: {
+                        texture = _greenPlantTexture;
+                        break;
+                    }
+                    case Item.RedPlant: {
+                        texture = _redPlantTexture;
+                        break;
+                    }
+                    case Item.BluePlant: {
+                        texture = _bluePlantTexture;
+                        break;
+                    }
+                    case Item.GoldPlant: {
+                        texture = _goldPlantTexture;
+                        break;
+                    }
+                }
+
+                _spriteBatch.Draw(texture, new Vector2(8f + (48f + 8f) * i, 8f), sourceRectangle: new Rectangle(96, 0, 48, 48), layerDepth: Layers.UI);
+            }
 
             _spriteBatch.End();
         }
