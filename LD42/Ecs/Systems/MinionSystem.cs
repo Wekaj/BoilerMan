@@ -132,11 +132,11 @@ namespace LD42.Ecs.Systems {
                 return true;
             }
 
-            if (intelligence > 90 && item == Item.BluePlant) {
+            if (intelligence > 90 && item == Item.SoulPlant) {
                 return true;
             }
 
-            if (intelligence > 50 && item == Item.RedSeed) {
+            if (intelligence > 50 && item == Item.MadPlant) {
                 return true;
             }
 

@@ -27,7 +27,9 @@ namespace LD42.Screens {
         private Texture2D _groundTexture, _gateTexture, _boxTexture, _coalTexture,
             _handOpenTexture, _handGrabTexture, _pixelTexture, _blueSeedTexture,
             _blueSaplingTexture, _bluePlantTexture, _minionTexture, _coalLargeTexture,
-            _armTexture, _jointTexture, _redSeedTexture;
+            _armTexture, _jointTexture, _madPlantTexture, _redSeedTexture,
+            _redSaplingTexture, _redPlantTexture, _greenSeedTexture, _greenSaplingTexture,
+            _greenPlantTexture;
 
         private Entity _hand, _object;
 
@@ -80,7 +82,19 @@ namespace LD42.Screens {
             Entity seedBox = _entityWorld.CreateEntity();
             seedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 16f)));
             seedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
-                SpawnerType = Item.BlueSeed
+                SpawnerType = Item.SoulSeed
+            });
+
+            Entity redSeedBox = _entityWorld.CreateEntity();
+            redSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 48f)));
+            redSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
+                SpawnerType = Item.RedSeed
+            });
+
+            Entity greenSeedBox = _entityWorld.CreateEntity();
+            greenSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 80f)));
+            greenSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
+                SpawnerType = Item.GreenSeed
             });
 
             Entity musicBox = _entityWorld.CreateEntity();
@@ -102,10 +116,6 @@ namespace LD42.Screens {
             skylight.AddComponent(new ToolComponent(_skylight, 16f, t => {
                 return Vector2.Zero;
             }));
-
-            for (int i = 0; i < 6; i++) {
-                Create(Item.Minion, _ground.Center.ToVector2());
-            }
         }
 
         private void CreateSystems() {
@@ -137,11 +147,17 @@ namespace LD42.Screens {
             _blueSeedTexture = content.Load<Texture2D>("Textures/blue_seed");
             _blueSaplingTexture = content.Load<Texture2D>("Textures/blue_sapling");
             _bluePlantTexture = content.Load<Texture2D>("Textures/blue_plant");
+            _redSeedTexture = content.Load<Texture2D>("Textures/red_seed");
+            _redSaplingTexture = content.Load<Texture2D>("Textures/red_sapling");
+            _redPlantTexture = content.Load<Texture2D>("Textures/red_plant");
+            _greenSeedTexture = content.Load<Texture2D>("Textures/green_seed");
+            _greenSaplingTexture = content.Load<Texture2D>("Textures/green_sapling");
+            _greenPlantTexture = content.Load<Texture2D>("Textures/green_plant");
             _minionTexture = content.Load<Texture2D>("Textures/minion");
             _coalLargeTexture = content.Load<Texture2D>("Textures/coal_large");
             _armTexture = content.Load<Texture2D>("Textures/arm");
             _jointTexture = content.Load<Texture2D>("Textures/joint");
-            _redSeedTexture = content.Load<Texture2D>("Textures/red_seed");
+            _madPlantTexture = content.Load<Texture2D>("Textures/mad_plant");
         }
 
         private void CreateHand(Vector2 position, Vector2 shoulder) {
@@ -160,20 +176,38 @@ namespace LD42.Screens {
                 case Item.Coal: {
                     return CreateCoal(position);
                 }
-                case Item.BlueSeed: {
-                    return CreateBlueSeed(position);
+                case Item.SoulSeed: {
+                    return CreateSoulSeed(position);
                 }
-                case Item.BlueSapling: {
-                    return CreateBlueSapling(position);
+                case Item.SoulSapling: {
+                    return CreateSoulSapling(position);
                 }
-                case Item.BluePlant: {
-                    return CreateBluePlant(position);
+                case Item.SoulPlant: {
+                    return CreateSoulPlant(position);
                 }
                 case Item.Minion: {
                     return CreateMinion(position);
                 }
-                case Item.RedSeed:  {
+                case Item.MadPlant:  {
+                    return CreateMadPlant(position);
+                }
+                case Item.RedSeed: {
                     return CreateRedSeed(position);
+                }
+                case Item.RedSapling: {
+                    return CreateRedSapling(position);
+                }
+                case Item.RedPlant: {
+                    return CreateRedPlant(position);
+                }
+                case Item.GreenSeed: {
+                    return CreateGreenSeed(position);
+                }
+                case Item.GreenSapling: {
+                    return CreateGreenSapling(position);
+                }
+                case Item.GreenPlant: {
+                    return CreateGreenPlant(position);
                 }
                 default: {
                     return null;
@@ -201,25 +235,79 @@ namespace LD42.Screens {
             return CreateItem(position, Item.Coal, 15f, _coalTexture, (float)_random.NextDouble() * MathHelper.TwoPi);
         }
 
-        private Entity CreateBlueSeed(Vector2 position) {
-            return CreateItem(position, Item.BlueSeed, 4f, _blueSeedTexture);
+        private Entity CreateSoulSeed(Vector2 position) {
+            return CreateItem(position, Item.SoulSeed, 4f, _blueSeedTexture);
         }
 
-        private Entity CreateBlueSapling(Vector2 position) {
-            Entity sapling = CreateItem(position, Item.BlueSapling, 12f, _blueSaplingTexture);
+        private Entity CreateSoulSapling(Vector2 position) {
+            Entity sapling = CreateItem(position, Item.SoulSapling, 12f, _blueSaplingTexture);
             sapling.AddComponent(new AnimationComponent());
             sapling.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0).AddFrame(3, 0), 0.25f);
 
             sapling.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 32, 32);
             sapling.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
 
-            sapling.GetComponent<ObjectComponent>().TransformType = Item.BluePlant;
+            sapling.GetComponent<ObjectComponent>().TransformType = Item.SoulPlant;
             sapling.GetComponent<ObjectComponent>().TransformTimer = 13f;
             return sapling;
         }
 
-        private Entity CreateBluePlant(Vector2 position) {
-            Entity plant = CreateItem(position, Item.BluePlant, 20f, _bluePlantTexture);
+        private Entity CreateSoulPlant(Vector2 position) {
+            Entity plant = CreateItem(position, Item.SoulPlant, 20f, _bluePlantTexture);
+            plant.AddComponent(new AnimationComponent());
+            plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
+
+            plant.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
+            plant.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
+            return plant;
+        }
+
+        private Entity CreateRedSeed(Vector2 position) {
+            return CreateItem(position, Item.RedSeed, 4f, _redSeedTexture);
+        }
+
+        private Entity CreateRedSapling(Vector2 position) {
+            Entity sapling = CreateItem(position, Item.RedSapling, 12f, _redSaplingTexture);
+            sapling.AddComponent(new AnimationComponent());
+            sapling.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0).AddFrame(3, 0), 0.25f);
+
+            sapling.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 32, 32);
+            sapling.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
+
+            sapling.GetComponent<ObjectComponent>().TransformType = Item.RedPlant;
+            sapling.GetComponent<ObjectComponent>().TransformTimer = 21f;
+            return sapling;
+        }
+
+        private Entity CreateRedPlant(Vector2 position) {
+            Entity plant = CreateItem(position, Item.RedPlant, 20f, _redPlantTexture);
+            plant.AddComponent(new AnimationComponent());
+            plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
+
+            plant.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
+            plant.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
+            return plant;
+        }
+
+        private Entity CreateGreenSeed(Vector2 position) {
+            return CreateItem(position, Item.GreenSeed, 4f, _greenSeedTexture);
+        }
+
+        private Entity CreateGreenSapling(Vector2 position) {
+            Entity sapling = CreateItem(position, Item.GreenSapling, 12f, _greenSaplingTexture);
+            sapling.AddComponent(new AnimationComponent());
+            sapling.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0).AddFrame(3, 0), 0.25f);
+
+            sapling.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 32, 32);
+            sapling.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
+
+            sapling.GetComponent<ObjectComponent>().TransformType = Item.GreenPlant;
+            sapling.GetComponent<ObjectComponent>().TransformTimer = 26f;
+            return sapling;
+        }
+
+        private Entity CreateGreenPlant(Vector2 position) {
+            Entity plant = CreateItem(position, Item.GreenPlant, 20f, _greenPlantTexture);
             plant.AddComponent(new AnimationComponent());
             plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
 
@@ -242,17 +330,17 @@ namespace LD42.Screens {
             return minion;
         }
 
-        private Entity CreateRedSeed(Vector2 position) {
-            Entity seed = CreateItem(position, Item.RedSeed, 17f, _redSeedTexture);
-            seed.AddComponent(new AnimationComponent());
-            seed.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
+        private Entity CreateMadPlant(Vector2 position) {
+            Entity plant = CreateItem(position, Item.MadPlant, 17f, _madPlantTexture);
+            plant.AddComponent(new AnimationComponent());
+            plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
 
-            seed.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
-            seed.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
+            plant.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
+            plant.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
 
-            seed.GetComponent<ObjectComponent>().SpreadType = Item.RedSeed;
-            seed.GetComponent<ObjectComponent>().SpreadTimer = 3f;
-            return seed;
+            plant.GetComponent<ObjectComponent>().SpreadType = Item.MadPlant;
+            plant.GetComponent<ObjectComponent>().SpreadTimer = 3f;
+            return plant;
         }
 
         private void GrabItem(Entity hand, Entity item) {
@@ -444,9 +532,9 @@ namespace LD42.Screens {
                 _object = null;
             }
 
-            if (_coalPeriod > 0.5f) {
-                _coalPeriod -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.05f;
-                _coalPeriod = Math.Max(_coalPeriod, 0.5f);
+            if (_coalPeriod > 0.65f) {
+                _coalPeriod -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.02f;
+                _coalPeriod = Math.Max(_coalPeriod, 0.65f);
             }
 
             _coalTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
@@ -484,7 +572,7 @@ namespace LD42.Screens {
                             _flameShift += 0.11f;
                             break;
                         }
-                        case Item.BluePlant: {
+                        case Item.SoulPlant: {
                             _incomingMinions++;
                             _minionTimer = 0.1f + (float)_random.NextDouble() * 0.4f;
                             break;
@@ -494,13 +582,26 @@ namespace LD42.Screens {
                 else {
                     ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
 
-                    if (objectComponent.TransformType != Item.None && !objectComponent.IsHeld && _skylight.IsActive) {
-                        objectComponent.TransformTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                    if (objectComponent.TransformType != Item.None && !objectComponent.IsHeld) {
+                        bool growing = false;
+
+                        if (objectComponent.TransformType == Item.SoulPlant || objectComponent.TransformType == Item.GreenPlant) {
+                            growing = _skylight.IsActive;
+                        }
+
+                        if (objectComponent.TransformType == Item.RedPlant) {
+                            growing = _musicBox.IsActive;
+                        }
+
+                        if (growing) {
+                            objectComponent.TransformTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                        }
+
                         if (objectComponent.TransformTimer <= 0f) {
                             entity.Delete();
 
                             Item item = objectComponent.TransformType;
-                            if (objectComponent.Type == Item.BlueSapling) {
+                            if (objectComponent.Type == Item.SoulSapling) {
                                 int count = 0;
                                 foreach (Entity other in _entityWorld.EntityManager.GetEntities(Aspect.All(typeof(ObjectComponent), typeof(PositionComponent)))) {
                                     Vector2 position = other.GetComponent<PositionComponent>().Position;
@@ -510,16 +611,16 @@ namespace LD42.Screens {
                                 }
 
                                 if (count > 10) {
-                                    item = Item.RedSeed;
+                                    item = Item.MadPlant;
                                 }
                                 else if (count > 5) {
                                     if (_random.Next(3) == 0) {
-                                        item = Item.RedSeed;
+                                        item = Item.MadPlant;
                                     }
                                 } 
                                 else {
                                     if (_random.Next(7) == 0) {
-                                        item = Item.RedSeed;
+                                        item = Item.MadPlant;
                                     }
                                 }
                             }
@@ -535,10 +636,22 @@ namespace LD42.Screens {
                         }
                     }
 
-                    if (objectComponent.Type == Item.BlueSeed) {
+                    if (objectComponent.Type == Item.SoulSeed) {
                         if (!objectComponent.IsHeld && positionComponent.Depth == 0f) {
                             entity.Delete();
-                            CreateBlueSapling(positionComponent.Position);
+                            CreateSoulSapling(positionComponent.Position);
+                        }
+                    }
+                    else if (objectComponent.Type == Item.RedSeed) {
+                        if (!objectComponent.IsHeld && positionComponent.Depth == 0f) {
+                            entity.Delete();
+                            CreateRedSapling(positionComponent.Position);
+                        }
+                    }
+                    else if (objectComponent.Type == Item.GreenSeed) {
+                        if (!objectComponent.IsHeld && positionComponent.Depth == 0f) {
+                            entity.Delete();
+                            CreateGreenSapling(positionComponent.Position);
                         }
                     }
                 }

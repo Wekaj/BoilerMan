@@ -2,10 +2,16 @@
     public enum Item {
         None,
         Coal,
-        BlueSeed,
-        BlueSapling,
-        BluePlant,
+        SoulSeed,
+        SoulSapling,
+        SoulPlant,
         Minion,
-        RedSeed
+        MadPlant,
+        RedSeed,
+        RedSapling,
+        RedPlant,
+        GreenSeed,
+        GreenSapling,
+        GreenPlant
     }
 }
