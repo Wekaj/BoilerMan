@@ -14,7 +14,12 @@ namespace LD42.Ecs.Systems {
             
             if (animationComponent.Animation != null && animationComponent.Timer < animationComponent.Duration) {
                 animationComponent.Timer += (float)DeltaTime.TotalSeconds;
-                animationComponent.Timer = Math.Min(animationComponent.Timer, animationComponent.Duration);
+                if (animationComponent.IsLooping) {
+                    animationComponent.Timer %= animationComponent.Duration;
+                }
+                else {
+                    animationComponent.Timer = Math.Min(animationComponent.Timer, animationComponent.Duration);
+                }
 
                 float p = animationComponent.Timer / animationComponent.Duration;
                 spriteComponent.SourceRectangle = animationComponent.Animation.GetFrame(p);

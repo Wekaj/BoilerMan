@@ -28,7 +28,6 @@ namespace LD42.Ecs.Systems {
 
             if (_random.Next(1000) < 100) {
                 minionComponent.Offset = new Vector2(64f * ((float)_random.NextDouble() * 2f - 1f), 64f * ((float)_random.NextDouble() * 2f - 1f));
-                minionComponent.Age++;
             }
 
             if (objectComponent.IsHeld || positionComponent.Depth != 0f) {
@@ -57,17 +56,16 @@ namespace LD42.Ecs.Systems {
                 Entity closestObject = null;
                 foreach (Entity item in EntityWorld.EntityManager.GetEntities(Aspect.All(typeof(ObjectComponent), typeof(PositionComponent)))) {
                     ObjectComponent itemObjectComponent = item.GetComponent<ObjectComponent>();
-                    if (itemObjectComponent.Type != Item.Coal || itemObjectComponent.IsMarked) {
-                        if (itemObjectComponent.Type != Item.Minion && minionComponent.Age > 1000 && !itemObjectComponent.IsMarked) {
-
-                        }
-                        else {
-                            continue;
-                        }
+                    if (itemObjectComponent.IsMarked || !WantsItem(itemObjectComponent.Type, minionComponent.Intelligence)) {
+                        continue;
                     }
 
                     PositionComponent itemPositionComponent = item.GetComponent<PositionComponent>();
-                    if (itemPositionComponent.Depth < 0f || itemPositionComponent.Position.Y <= _furnace.Region.Bottom) {
+                    float checkDistance = 0f;
+                    if (minionComponent.Intelligence < 30) {
+                        checkDistance = 20f;
+                    }
+                    if (itemPositionComponent.Depth < 0f || itemPositionComponent.Position.Y <= _furnace.Region.Bottom - checkDistance) {
                         continue;
                     }
 
@@ -85,7 +83,15 @@ namespace LD42.Ecs.Systems {
                 }
             }
 
-            if (positionComponent.Position.Y <= _furnace.Region.Bottom + 40f && _furnace.Timer > Furnace.ClosedTime - 1f) {
+            float safetyDistance = 20f;
+            if (minionComponent.Intelligence > 90) {
+                safetyDistance = 40f;
+            }
+            else if (minionComponent.Intelligence > 80) {
+                safetyDistance = 30f;
+            }
+
+            if (minionComponent.Intelligence > 50 && (positionComponent.Position.Y <= _furnace.Region.Bottom + safetyDistance && _furnace.Timer > Furnace.ClosedTime - 1f)) {
                 Vector2 target = _furnace.Region.Center.ToVector2() + new Vector2(0f, 192f) + minionComponent.Offset * 2f;
 
                 forceComponent.Force += Vector2.Normalize(target - positionComponent.Position) * speed;
@@ -101,10 +107,11 @@ namespace LD42.Ecs.Systems {
                     forceComponent.Force += Vector2.Normalize(target - positionComponent.Position) * speed;
                 }
                 else {
-                    float hDir = _furnace.Region.Left - positionComponent.Position.X;
+                    float xTarget = _furnace.Region.Left + 100f * minionComponent.Tendency;
                     if (positionComponent.Position.X > _furnace.Region.Center.X) {
-                        hDir = _furnace.Region.Right - positionComponent.Position.X;
+                        xTarget = _furnace.Region.Right - 100f * minionComponent.Tendency;
                     }
+                    float hDir = xTarget - positionComponent.Position.X;
 
                     forceComponent.Force += new Vector2(hDir / 30f, -speed);
 
@@ -118,6 +125,26 @@ namespace LD42.Ecs.Systems {
 
                 forceComponent.Force += Vector2.Normalize(target - positionComponent.Position) * speed;
             }
+        }
+
+        private bool WantsItem(Item item, int intelligence) {
+            if (item == Item.Coal) {
+                return true;
+            }
+
+            if (intelligence > 90 && item == Item.BluePlant) {
+                return true;
+            }
+
+            if (intelligence > 50 && item == Item.RedSeed) {
+                return true;
+            }
+
+            if (intelligence < 10 && item != Item.Minion && item != Item.None) {
+                return true;
+            }
+
+            return false;
         }
     }
 }

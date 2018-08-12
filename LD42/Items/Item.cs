@@ -5,6 +5,7 @@
         BlueSeed,
         BlueSapling,
         BluePlant,
-        Minion
+        Minion,
+        RedSeed
     }
 }

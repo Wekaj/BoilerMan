@@ -20,23 +20,26 @@ namespace LD42.Screens {
         private readonly EntityWorld _entityWorld;
         private readonly Rectangle _ground, _box;
         private readonly Furnace _furnace;
-        private readonly SimpleTool _musicBox;
+        private readonly SimpleTool _musicBox, _bellows, _skylight;
 
         private readonly SpriteBatch _spriteBatch;
 
         private Texture2D _groundTexture, _gateTexture, _boxTexture, _coalTexture,
             _handOpenTexture, _handGrabTexture, _pixelTexture, _blueSeedTexture,
             _blueSaplingTexture, _bluePlantTexture, _minionTexture, _coalLargeTexture,
-            _armTexture;
+            _armTexture, _jointTexture, _redSeedTexture;
 
         private Entity _hand, _object;
 
-        private float _coalTimer = 0f, _coalPeriod = 0.1f;
+        private float _coalTimer = 0f, _coalPeriod = 3f;
 
-        private float _flamePower = 20f, _flameShift = 0f;
+        private float _flamePower = 0f, _flameShift = 0f;
 
         private const float _furnaceAnimationDuration = 0.075f;
         private float _furnaceAnimation = 0f;
+
+        private int _incomingMinions;
+        private float _minionTimer;
 
         public GameScreen(LD42Game game) {
             _game = game;
@@ -53,6 +56,8 @@ namespace LD42.Screens {
             
             _furnace = new Furnace(new Rectangle(_ground.Left, _ground.Top, 448, 128));
             _musicBox = new SimpleTool();
+            _bellows = new SimpleTool();
+            _skylight = new SimpleTool();
 
             _spriteBatch = new SpriteBatch(game.GraphicsDevice);
 
@@ -85,6 +90,19 @@ namespace LD42.Screens {
                 return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 16f, (float)Math.Sin(p * MathHelper.TwoPi) * 16f);
             }));
 
+            Entity bellows = _entityWorld.CreateEntity();
+            bellows.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, 64f)));
+            bellows.AddComponent(new ToolComponent(_bellows, 16f, t => {
+                float p = (t % 1f) / 1f;
+                return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 8f, (float)Math.Sin(p * MathHelper.TwoPi) * 32f);
+            }));
+
+            Entity skylight = _entityWorld.CreateEntity();
+            skylight.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, 192f)));
+            skylight.AddComponent(new ToolComponent(_skylight, 16f, t => {
+                return Vector2.Zero;
+            }));
+
             for (int i = 0; i < 6; i++) {
                 Create(Item.Minion, _ground.Center.ToVector2());
             }
@@ -105,7 +123,7 @@ namespace LD42.Screens {
             _entityWorld.SystemManager.SetSystem(new HandRotationSystem(_box.Center.ToVector2()), GameLoopType.Draw);
             _entityWorld.SystemManager.SetSystem(new ObjectSortingSystem(), GameLoopType.Draw);
             _entityWorld.SystemManager.SetSystem(new SpriteDrawingSystem(_spriteBatch), GameLoopType.Draw);
-            _entityWorld.SystemManager.SetSystem(new ArmDrawingSystem(_spriteBatch, _armTexture), GameLoopType.Draw);
+            _entityWorld.SystemManager.SetSystem(new ArmDrawingSystem(_spriteBatch, _armTexture, _jointTexture), GameLoopType.Draw);
         }
 
         private void LoadContent(ContentManager content) {
@@ -122,6 +140,8 @@ namespace LD42.Screens {
             _minionTexture = content.Load<Texture2D>("Textures/minion");
             _coalLargeTexture = content.Load<Texture2D>("Textures/coal_large");
             _armTexture = content.Load<Texture2D>("Textures/arm");
+            _jointTexture = content.Load<Texture2D>("Textures/joint");
+            _redSeedTexture = content.Load<Texture2D>("Textures/red_seed");
         }
 
         private void CreateHand(Vector2 position, Vector2 shoulder) {
@@ -151,6 +171,9 @@ namespace LD42.Screens {
                 }
                 case Item.Minion: {
                     return CreateMinion(position);
+                }
+                case Item.RedSeed:  {
+                    return CreateRedSeed(position);
                 }
                 default: {
                     return null;
@@ -183,7 +206,7 @@ namespace LD42.Screens {
         }
 
         private Entity CreateBlueSapling(Vector2 position) {
-            Entity sapling = CreateItem(position, Item.BlueSapling, 8f, _blueSaplingTexture);
+            Entity sapling = CreateItem(position, Item.BlueSapling, 12f, _blueSaplingTexture);
             sapling.AddComponent(new AnimationComponent());
             sapling.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0).AddFrame(3, 0), 0.25f);
 
@@ -196,7 +219,7 @@ namespace LD42.Screens {
         }
 
         private Entity CreateBluePlant(Vector2 position) {
-            Entity plant = CreateItem(position, Item.BluePlant, 15f, _bluePlantTexture);
+            Entity plant = CreateItem(position, Item.BluePlant, 20f, _bluePlantTexture);
             plant.AddComponent(new AnimationComponent());
             plant.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
 
@@ -210,7 +233,26 @@ namespace LD42.Screens {
             minion.AddComponent(new MinionComponent());
 
             minion.GetComponent<ObjectComponent>().IsSolid = false;
+
+            minion.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 32, 32);
+            minion.GetComponent<SpriteComponent>().Origin = new Vector2(16f);
+
+            minion.AddComponent(new AnimationComponent());
+            minion.GetComponent<AnimationComponent>().Play(new Animation(32, 32).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f, true);
             return minion;
+        }
+
+        private Entity CreateRedSeed(Vector2 position) {
+            Entity seed = CreateItem(position, Item.RedSeed, 17f, _redSeedTexture);
+            seed.AddComponent(new AnimationComponent());
+            seed.GetComponent<AnimationComponent>().Play(new Animation(48, 48).AddFrame(0, 0).AddFrame(1, 0).AddFrame(2, 0), 0.2f);
+
+            seed.GetComponent<SpriteComponent>().SourceRectangle = new Rectangle(0, 0, 48, 48);
+            seed.GetComponent<SpriteComponent>().Origin = new Vector2(24f);
+
+            seed.GetComponent<ObjectComponent>().SpreadType = Item.RedSeed;
+            seed.GetComponent<ObjectComponent>().SpreadTimer = 3f;
+            return seed;
         }
 
         private void GrabItem(Entity hand, Entity item) {
@@ -281,6 +323,10 @@ namespace LD42.Screens {
             _hand = toolComponent.HoldingHand;
             _object = null;
             toolComponent.HoldingHand = null;
+        }
+
+        private Vector2 GetRandomEntrance() {
+            return new Vector2(_ground.Left + (float)_random.NextDouble() * _ground.Width, _ground.Bottom + 8f + (float)_random.NextDouble() * 16f);
         }
 
         public void Update(GameTime gameTime) {
@@ -398,28 +444,74 @@ namespace LD42.Screens {
                 _object = null;
             }
 
+            if (_coalPeriod > 0.5f) {
+                _coalPeriod -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.05f;
+                _coalPeriod = Math.Max(_coalPeriod, 0.5f);
+            }
+
             _coalTimer += (float)gameTime.ElapsedGameTime.TotalSeconds;
             while (_coalTimer > _coalPeriod) {
                 _coalTimer -= _coalPeriod;
 
-                CreateCoal(new Vector2(_ground.Left + (float)_random.NextDouble() * _ground.Width, _ground.Bottom + 8f + (float)_random.NextDouble() * 16f));
+                CreateCoal(GetRandomEntrance());
+            }
+
+            if (_minionTimer > 0f) {
+                _minionTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+            }
+            else if (_incomingMinions > 0) {
+                Vector2 position = new Vector2(_ground.Left - 32f, _furnace.Region.Bottom + 4f + (float)_random.NextDouble() * 64f);
+                if (_random.Next(2) == 0) {
+                    position.X = _ground.Right + 32f;
+                }
+
+                Entity minion = CreateMinion(position);
+
+                _incomingMinions--;
+                _minionTimer = 0.1f + (float)_random.NextDouble() * 0.4f;
             }
 
             foreach (Entity entity in _entityWorld.EntityManager.GetEntities(Aspect.All(typeof(ObjectComponent)))) {
                 PositionComponent positionComponent = entity.GetComponent<PositionComponent>();
 
                 if (positionComponent.Depth < -50f) {
+                    ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
+
                     entity.Delete();
-                    _flameShift += 0.11f;
+
+                    switch (objectComponent.Type) {
+                        case Item.Coal: {
+                            _flameShift += 0.11f;
+                            break;
+                        }
+                        case Item.BluePlant: {
+                            _incomingMinions++;
+                            _minionTimer = 0.1f + (float)_random.NextDouble() * 0.4f;
+                            break;
+                        }
+                    }
                 }
                 else {
                     ObjectComponent objectComponent = entity.GetComponent<ObjectComponent>();
 
-                    if (objectComponent.TransformType != Item.None && !objectComponent.IsHeld) {
+                    if (objectComponent.TransformType != Item.None && !objectComponent.IsHeld && _skylight.IsActive) {
                         objectComponent.TransformTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
                         if (objectComponent.TransformTimer <= 0f) {
                             entity.Delete();
-                            Create(objectComponent.TransformType, positionComponent.Position);
+
+                            Item item = objectComponent.TransformType;
+                            if (objectComponent.Type == Item.BlueSapling && _random.Next(4) == 0) {
+                                item = Item.RedSeed;
+                            }
+                            Create(item, positionComponent.Position);
+                        }
+                    }
+
+                    if (objectComponent.SpreadType != Item.None && !objectComponent.IsHeld) {
+                        objectComponent.SpreadTimer -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                        if (objectComponent.SpreadTimer <= 0f) {
+                            objectComponent.SpreadTimer = 3f;
+                            Create(objectComponent.SpreadType, positionComponent.Position + new Vector2((float)_random.NextDouble(), (float)_random.NextDouble()) * 10f);
                         }
                     }
 
@@ -432,8 +524,17 @@ namespace LD42.Screens {
                 }
             }
 
-            _flameShift -= (float)gameTime.ElapsedGameTime.TotalSeconds * 0.1f;
+            float shift = 0.4f;
+            if (_bellows.IsActive) {
+                shift = 0.2f;
+            }
+            _flameShift -= (float)gameTime.ElapsedGameTime.TotalSeconds * shift;
             _flamePower += _flameShift * (float)gameTime.ElapsedGameTime.TotalSeconds;
+
+            if (_flamePower < 0f) {
+                _flamePower = 0f;
+                _flameShift = 0f;
+            }
 
             if (_furnace.IsOpen) {
                 _furnaceAnimation += (float)gameTime.ElapsedGameTime.TotalSeconds;

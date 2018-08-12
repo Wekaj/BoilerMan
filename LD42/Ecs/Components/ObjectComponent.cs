@@ -20,5 +20,8 @@ namespace LD42.Ecs.Components {
         public bool IsSolid { get; set; } = true;
 
         public bool IsMarked { get; set; } = false;
+
+        public Item SpreadType { get; set; } = Item.None;
+        public float SpreadTimer { get; set; } = 0f;
     }
 }

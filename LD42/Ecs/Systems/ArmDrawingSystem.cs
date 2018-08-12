@@ -9,12 +9,13 @@ using System;
 namespace LD42.Ecs.Systems {
     public sealed class ArmDrawingSystem : EntityProcessingSystem {
         private readonly SpriteBatch _spriteBatch;
-        private readonly Texture2D _armTexture;
+        private readonly Texture2D _armTexture, _jointTexture;
 
-        public ArmDrawingSystem(SpriteBatch spriteBatch, Texture2D armTexture) 
+        public ArmDrawingSystem(SpriteBatch spriteBatch, Texture2D armTexture, Texture2D jointTexture) 
             : base(Aspect.All(typeof(HandComponent), typeof(PositionComponent))) {
             _spriteBatch = spriteBatch;
             _armTexture = armTexture;
+            _jointTexture = jointTexture;
         }
 
         public override void Process(Entity entity) {
@@ -37,13 +38,14 @@ namespace LD42.Ecs.Systems {
             Vector2 p3 = hand - new Vector2(0f, positionComponent.Depth);
 
             DrawSegment(p1, p2);
+            _spriteBatch.Draw(_jointTexture, p2, origin: new Vector2(10f), layerDepth: Layers.Arms);
             DrawSegment(p2, p3);
         }
 
         private void DrawSegment(Vector2 p1, Vector2 p2) {
             float angle = (float)Math.Atan2(p2.Y - p1.Y, p2.X - p1.X);
             float length = (p2 - p1).Length();
-            _spriteBatch.Draw(_armTexture, p1, rotation: angle, origin: new Vector2(8f, 8f), 
+            _spriteBatch.Draw(_armTexture, p1, rotation: angle, origin: new Vector2(8f), 
                 scale: new Vector2(length / _armTexture.Width, 1f), layerDepth: Layers.Arms);
         }
     }
