@@ -500,8 +500,28 @@ namespace LD42.Screens {
                             entity.Delete();
 
                             Item item = objectComponent.TransformType;
-                            if (objectComponent.Type == Item.BlueSapling && _random.Next(4) == 0) {
-                                item = Item.RedSeed;
+                            if (objectComponent.Type == Item.BlueSapling) {
+                                int count = 0;
+                                foreach (Entity other in _entityWorld.EntityManager.GetEntities(Aspect.All(typeof(ObjectComponent), typeof(PositionComponent)))) {
+                                    Vector2 position = other.GetComponent<PositionComponent>().Position;
+                                    if ((position - positionComponent.Position).LengthSquared() < 64f * 64f) {
+                                        count++;
+                                    }
+                                }
+
+                                if (count > 10) {
+                                    item = Item.RedSeed;
+                                }
+                                else if (count > 5) {
+                                    if (_random.Next(3) == 0) {
+                                        item = Item.RedSeed;
+                                    }
+                                } 
+                                else {
+                                    if (_random.Next(7) == 0) {
+                                        item = Item.RedSeed;
+                                    }
+                                }
                             }
                             Create(item, positionComponent.Position);
                         }
