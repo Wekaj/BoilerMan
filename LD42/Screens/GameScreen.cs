@@ -31,7 +31,7 @@ namespace LD42.Screens {
             _armTexture, _jointTexture, _madPlantTexture, _redSeedTexture,
             _redSaplingTexture, _redPlantTexture, _greenSeedTexture, _greenSaplingTexture,
             _greenPlantTexture, _blueSeedTexture, _blueSaplingTexture, _bluePlantTexture,
-            _goldPlantTexture;
+            _goldPlantTexture, _borderTexture;
 
         private Entity _hand, _object;
 
@@ -78,16 +78,23 @@ namespace LD42.Screens {
             CreateHand(_box.Center.ToVector2() + new Vector2(128f, 128f), _box.Center.ToVector2() + new Vector2(12f, 8f));
             CreateHand(_box.Center.ToVector2() + new Vector2(-128f, 128f), _box.Center.ToVector2() + new Vector2(-12f, 8f));
 
-            Entity tool = _entityWorld.CreateEntity();
-            tool.AddComponent(new PositionComponent(new Vector2(16f, 64f)));
-            tool.AddComponent(new ToolComponent(_furnace, 16f, t => {
+            Entity furnace = _entityWorld.CreateEntity();
+            furnace.AddComponent(new PositionComponent(new Vector2(64f, 160f)));
+            furnace.AddComponent(new ToolComponent(_furnace, 24f, t => {
                 float p = (t % 1f) / 1f;
                 return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 8f, (float)Math.Sin(p * MathHelper.TwoPi) * 32f);
             }));
 
-            Entity seedBox = _entityWorld.CreateEntity();
-            seedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 16f)));
-            seedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
+            Entity bellows = _entityWorld.CreateEntity();
+            bellows.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 64f, 160f)));
+            bellows.AddComponent(new ToolComponent(_bellows, 16f, t => {
+                float p = (t % 1.5f) / 1.5f;
+                return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 8f, (float)Math.Sin(p * MathHelper.TwoPi) * 32f);
+            }));
+
+            Entity soulSeedBox = _entityWorld.CreateEntity();
+            soulSeedBox.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, _game.GraphicsDevice.Viewport.Height - 16f)));
+            soulSeedBox.AddComponent(new ObjectComponent(Item.None, 16f) {
                 SpawnerType = Item.SoulSeed
             });
 
@@ -116,18 +123,13 @@ namespace LD42.Screens {
                 return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 16f, (float)Math.Sin(p * MathHelper.TwoPi) * 16f);
             }));
 
-            Entity bellows = _entityWorld.CreateEntity();
-            bellows.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, 64f)));
-            bellows.AddComponent(new ToolComponent(_bellows, 16f, t => {
-                float p = (t % 1f) / 1f;
-                return new Vector2((float)Math.Cos(p * MathHelper.TwoPi) * 8f, (float)Math.Sin(p * MathHelper.TwoPi) * 32f);
-            }));
-
             Entity skylight = _entityWorld.CreateEntity();
             skylight.AddComponent(new PositionComponent(new Vector2(_game.GraphicsDevice.Viewport.Width - 16f, 192f)));
             skylight.AddComponent(new ToolComponent(_skylight, 16f, t => {
                 return Vector2.Zero;
             }));
+
+            Console.WriteLine(_ground.Left + ", " + _ground.Bottom);
         }
 
         private void CreateSystems() {
@@ -174,6 +176,7 @@ namespace LD42.Screens {
             _armTexture = content.Load<Texture2D>("Textures/arm");
             _jointTexture = content.Load<Texture2D>("Textures/joint");
             _madPlantTexture = content.Load<Texture2D>("Textures/mad_plant");
+            _borderTexture = content.Load<Texture2D>("Textures/border");
         }
 
         private void CreateHand(Vector2 position, Vector2 shoulder) {
@@ -812,6 +815,8 @@ namespace LD42.Screens {
             _entityWorld.Draw();
 
             _spriteBatch.Draw(_boxTexture, new Vector2(center.X, 154f), origin: _boxTexture.Bounds.Center.ToVector2(), layerDepth: Layers.AboveGround);
+
+            _spriteBatch.Draw(_borderTexture, Vector2.Zero, layerDepth: Layers.AboveGround - 0.01f);
 
             _spriteBatch.Draw(_pixelTexture, new Vector2(128f, 16f), color: Color.OrangeRed, scale: new Vector2(128f * _flamePower / 100f, 16f), layerDepth: Layers.UI);
 
